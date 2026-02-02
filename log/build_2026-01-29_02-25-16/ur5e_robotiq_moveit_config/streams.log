@@ -1,0 +1,53 @@
+[0.014s] Invoking command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config
+[0.146s] -- The C compiler identification is GNU 13.3.0
+[0.257s] -- The CXX compiler identification is GNU 13.3.0
+[0.304s] -- Detecting C compiler ABI info
+[0.514s] -- Detecting C compiler ABI info - done
+[0.532s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.532s] -- Detecting C compile features
+[0.532s] -- Detecting C compile features - done
+[0.552s] -- Detecting CXX compiler ABI info
+[0.783s] -- Detecting CXX compiler ABI info - done
+[0.798s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.799s] -- Detecting CXX compile features
+[0.800s] -- Detecting CXX compile features - done
+[0.803s] -- Found ament_cmake: 2.5.5 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[1.002s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[1.099s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.260s] -- Configuring done (1.2s)
+[1.264s] -- Generating done (0.0s)
+[1.266s] -- Build files have been written to: /home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config
+[1.274s] Invoked command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config' returned '0': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config
+[1.277s] Invoking command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config -- -j8 -l8
+[1.366s] Invoked command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config' returned '0': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config -- -j8 -l8
+[1.369s] Invoking command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config
+[1.387s] -- Install configuration: ""
+[1.388s] -- Execute custom install script
+[1.388s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/chomp_planning.yaml
+[1.409s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/joint_limits.yaml
+[1.422s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/kinematics.yaml
+[1.443s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/moveit.rviz
+[1.464s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/moveit_controllers.yaml
+[1.476s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ompl_planning.yaml
+[1.486s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/pilz_cartesian_limits.yaml
+[1.496s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/pilz_industrial_motion_planner_planning.yaml
+[1.516s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ur_servo.yaml
+[1.528s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/launch/ur_moveit.launch.py
+[1.548s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/srdf/ur.srdf.xacro
+[1.567s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/srdf/ur_macro.srdf.xacro
+[1.587s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ament_index/resource_index/package_run_dependencies/ur5e_robotiq_moveit_config
+[1.600s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ament_index/resource_index/parent_prefix_path/ur5e_robotiq_moveit_config
+[1.619s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/environment/ament_prefix_path.sh
+[1.641s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/environment/ament_prefix_path.dsv
+[1.661s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/environment/path.sh
+[1.673s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/environment/path.dsv
+[1.693s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/local_setup.bash
+[1.712s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/local_setup.sh
+[1.724s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/local_setup.zsh
+[1.736s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/local_setup.dsv
+[1.756s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/package.dsv
+[1.771s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ament_index/resource_index/packages/ur5e_robotiq_moveit_config
+[1.790s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/cmake/ur5e_robotiq_moveit_configConfig.cmake
+[1.811s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/cmake/ur5e_robotiq_moveit_configConfig-version.cmake
+[1.824s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/package.xml
+[1.850s] Invoked command in '/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config' returned '0': CMAKE_PREFIX_PATH=/home/ubuntu/ros2_ws/install/ur_yt_sim:/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config

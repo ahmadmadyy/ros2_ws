@@ -1,0 +1,4 @@
+Invoking command in '/home/ubuntu/ros2_ws/build/ur_yt_sim': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur_yt_sim -- -j8 -l8
+Invoked command in '/home/ubuntu/ros2_ws/build/ur_yt_sim' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur_yt_sim -- -j8 -l8
+Invoking command in '/home/ubuntu/ros2_ws/build/ur_yt_sim': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur_yt_sim
+Invoked command in '/home/ubuntu/ros2_ws/build/ur_yt_sim' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur_yt_sim

@@ -1,0 +1,1 @@
+/home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config/launch/ur_moveit.launch.py

@@ -1,0 +1,13 @@
+source /opt/ros/jazzy/setup.bash
+
+source install/setup.bash
+
+clear
+cd ~/ros2_ws
+colcon build --symlink-install
+source /opt/ros/jazzy/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ur_yt_sim view_ur5e_gripper.launch.py
+
+
+ros2 launch ur5e_robotiq_moveit_config ur_moveit.launch.py ur_type:=ur5e

@@ -1,0 +1,50 @@
+[0.015s] Invoking command in '/home/ubuntu/ros2_ws/build/ur_yt_sim': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ubuntu/ros2_ws/src/ur_yt_sim -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/ubuntu/ros2_ws/install/ur_yt_sim
+[0.142s] -- The C compiler identification is GNU 13.3.0
+[0.252s] -- The CXX compiler identification is GNU 13.3.0
+[0.299s] -- Detecting C compiler ABI info
+[0.504s] -- Detecting C compiler ABI info - done
+[0.521s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.521s] -- Detecting C compile features
+[0.522s] -- Detecting C compile features - done
+[0.537s] -- Detecting CXX compiler ABI info
+[0.741s] -- Detecting CXX compiler ABI info - done
+[0.755s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.755s] -- Detecting CXX compile features
+[0.756s] -- Detecting CXX compile features - done
+[0.759s] -- Found ament_cmake: 2.5.5 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.962s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[1.064s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.229s] -- Configuring done (1.2s)
+[1.234s] -- Generating done (0.0s)
+[1.234s] -- Build files have been written to: /home/ubuntu/ros2_ws/build/ur_yt_sim
+[1.242s] Invoked command in '/home/ubuntu/ros2_ws/build/ur_yt_sim' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/ubuntu/ros2_ws/src/ur_yt_sim -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/ubuntu/ros2_ws/install/ur_yt_sim
+[1.244s] Invoking command in '/home/ubuntu/ros2_ws/build/ur_yt_sim': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur_yt_sim -- -j8 -l8
+[1.340s] Invoked command in '/home/ubuntu/ros2_ws/build/ur_yt_sim' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/ubuntu/ros2_ws/build/ur_yt_sim -- -j8 -l8
+[1.363s] Invoking command in '/home/ubuntu/ros2_ws/build/ur_yt_sim': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur_yt_sim
+[1.372s] -- Install configuration: ""
+[1.372s] -- Execute custom install script
+[1.373s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/launch/view_ur5e_gripper.launch.py
+[1.393s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/robotiq_gripper.ros2_control.xacro
+[1.405s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/robotiq_gripper_macro.xacro
+[1.418s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5.ros2_control.xacro
+[1.435s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5_macro.xacro
+[1.447s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5e_gripper.urdf.xacro
+[1.469s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur_moveit.urdf.xacro
+[1.489s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/rviz/ur5e_gripper.rviz
+[1.509s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/config/initial_positions.yaml
+[1.527s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ament_index/resource_index/package_run_dependencies/ur_yt_sim
+[1.539s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ament_index/resource_index/parent_prefix_path/ur_yt_sim
+[1.559s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/environment/ament_prefix_path.sh
+[1.577s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/environment/ament_prefix_path.dsv
+[1.588s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/environment/path.sh
+[1.608s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/environment/path.dsv
+[1.631s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/local_setup.bash
+[1.641s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/local_setup.sh
+[1.660s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/local_setup.zsh
+[1.679s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/local_setup.dsv
+[1.691s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/package.dsv
+[1.701s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ament_index/resource_index/packages/ur_yt_sim
+[1.720s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/cmake/ur_yt_simConfig.cmake
+[1.733s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/cmake/ur_yt_simConfig-version.cmake
+[1.746s] -- Symlinking: /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/package.xml
+[1.761s] Invoked command in '/home/ubuntu/ros2_ws/build/ur_yt_sim' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/ubuntu/ros2_ws/build/ur_yt_sim

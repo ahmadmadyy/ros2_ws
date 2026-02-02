@@ -1,0 +1,1 @@
+/home/ubuntu/ros2_ws/src/ur_yt_sim/launch/view_ur5e_gripper.launch.py
