@@ -1,6 +1,7 @@
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/launch/view_ur5e_gripper.launch.py
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/robotiq_gripper.ros2_control.xacro
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/robotiq_gripper_macro.xacro
+/home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/robotiq_overrides/robotiq_gripper.ros2_control.xacro
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5.ros2_control.xacro
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5_macro.xacro
 /home/ubuntu/ros2_ws/install/ur_yt_sim/share/ur_yt_sim/urdf/ur5e_gripper.urdf.xacro

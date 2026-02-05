@@ -1,3 +1,6 @@
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/launch/bringup.launch.py
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/launch/ros2_control.launch.py
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/launch/ur_moveit.launch.py
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/chomp_planning.yaml
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/joint_limits.yaml
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/kinematics.yaml
@@ -6,11 +9,14 @@
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ompl_planning.yaml
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/pilz_cartesian_limits.yaml
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/pilz_industrial_motion_planner_planning.yaml
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ros2_controllers.yaml
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ur.srdf
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ur.urdf
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/config/ur_servo.yaml
-/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/launch/ur_moveit.launch.py
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/srdf/ur.srdf.xacro
-/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/srdf/ur5e_robotiq.srdf
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/srdf/ur_macro.srdf.xacro
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/urdf/ur_moveit.urdf.xacro
+/home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/lib/ur5e_robotiq_moveit_config/publish_robot_description.py
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ament_index/resource_index/package_run_dependencies/ur5e_robotiq_moveit_config
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ament_index/resource_index/parent_prefix_path/ur5e_robotiq_moveit_config
 /home/ubuntu/ros2_ws/install/ur5e_robotiq_moveit_config/share/ur5e_robotiq_moveit_config/environment/ament_prefix_path.sh

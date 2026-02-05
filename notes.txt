@@ -11,3 +11,16 @@ ros2 launch ur_yt_sim view_ur5e_gripper.launch.py
 
 
 ros2 launch ur5e_robotiq_moveit_config ur_moveit.launch.py ur_type:=ur5e
+
+
+-----
+source /opt/ros/jazzy/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ur5e_robotiq_moveit_config bringup.launch.py ur_type:=ur5e
+
+source /opt/ros/jazzy/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 param get /move_group robot_description | head -n 3
+ros2 param get /move_group robot_description_semantic | head -n 3
+
+ros2 control list_controllers

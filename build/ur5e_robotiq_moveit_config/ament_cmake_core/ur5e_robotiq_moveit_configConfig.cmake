@@ -16,7 +16,7 @@ set(_ur5e_robotiq_moveit_config_CONFIG_INCLUDED TRUE)
 
 # output package information
 if(NOT ur5e_robotiq_moveit_config_FIND_QUIETLY)
-  message(STATUS "Found ur5e_robotiq_moveit_config: 0.0.1 (${ur5e_robotiq_moveit_config_DIR})")
+  message(STATUS "Found ur5e_robotiq_moveit_config: 3.7.0 (${ur5e_robotiq_moveit_config_DIR})")
 endif()
 
 # warn when using a deprecated package

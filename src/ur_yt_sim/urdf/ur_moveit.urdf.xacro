@@ -1,18 +1,26 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur">
 
-  <!-- xacro args MUST be declared before use -->
-  <xacro:arg name="name" default="ur"/>
+  <!-- ===================== ARGS ===================== -->
+  <xacro:arg name="name" default="ur5e"/>
   <xacro:arg name="ur_type" default="ur5e"/>
   <xacro:arg name="tf_prefix" default=""/>
 
-  <!-- Now it's safe to use $(arg name) -->
-  <xacro:property name="robot_name" value="$(arg name)"/>
+  <!-- Route A: fake ros2_control for arm + gripper -->
+  <xacro:arg name="use_fake_hardware" default="true"/>
+  <xacro:arg name="fake_sensor_commands" default="false"/>
 
+  <!-- ===================== INCLUDES ===================== -->
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
-  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
 
-  <!-- params -->
+  <!-- UR arm ros2_control macro (from your ur_yt_sim pkg) -->
+  <xacro:include filename="$(find ur_yt_sim)/urdf/ur5.ros2_control.xacro"/>
+
+  <!-- Robotiq: geometry macro + our ros2_control override macro -->
+  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+  <xacro:include filename="$(find ur_yt_sim)/urdf/robotiq_overrides/robotiq_gripper.ros2_control.xacro"/>
+
+  <!-- ===================== UR PARAM FILES ===================== -->
   <xacro:arg name="joint_limit_params"
              default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
   <xacro:arg name="kinematics_params"
@@ -22,8 +30,10 @@
   <xacro:arg name="visual_params"
              default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
 
+  <!-- ===================== WORLD ===================== -->
   <link name="world"/>
 
+  <!-- ===================== UR ROBOT (geometry + joints) ===================== -->
   <xacro:ur_robot
     name="$(arg name)"
     tf_prefix="$(arg tf_prefix)"
@@ -35,8 +45,42 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:ur_robot>
 
-  <xacro:robotiq_gripper name="robotiq_2f85" parent="tool0" prefix="rq_">
+  <!-- ===================== UR ARM ROS2_CONTROL (FAKE) ===================== -->
+  <!-- NOTE: This is what provides shoulder_pan_joint/position etc. -->
+  <xacro:ur_ros2_control
+    name="$(arg name)"
+    use_fake_hardware="$(arg use_fake_hardware)"
+    fake_sensor_commands="$(arg fake_sensor_commands)"
+    sim_gazebo="false"
+    sim_ignition="false"
+    headless_mode="true"
+    tf_prefix="$(arg tf_prefix)"
+    script_filename="/tmp/ur_fake.script"
+    output_recipe_filename="/tmp/ur_fake_out.recipe"
+    input_recipe_filename="/tmp/ur_fake_in.recipe"
+    hash_kinematics=""
+    robot_ip="0.0.0.0" />
+
+  <!-- ===================== ROBOTIQ GEOMETRY ONLY (NO ros2_control) ===================== -->
+  <xacro:robotiq_gripper
+    name="robotiq_2f85"
+    parent="tool0"
+    prefix="rq_"
+    include_ros2_control="false"
+    sim_ignition="false"
+    sim_isaac="false"
+    use_fake_hardware="$(arg use_fake_hardware)"
+    fake_sensor_commands="$(arg fake_sensor_commands)">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:robotiq_gripper>
+
+  <!-- ===================== ROBOTIQ ROS2_CONTROL (FAKE) ===================== -->
+  <xacro:robotiq_gripper_ros2_control
+    name="robotiq_2f85"
+    prefix="rq_"
+    sim_ignition="false"
+    sim_isaac="false"
+    use_fake_hardware="$(arg use_fake_hardware)"
+    fake_sensor_commands="$(arg fake_sensor_commands)"/>
 
 </robot>

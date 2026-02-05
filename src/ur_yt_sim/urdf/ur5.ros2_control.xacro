@@ -28,15 +28,20 @@
         <xacro:if value="${sim_gazebo}">
           <plugin>gazebo_ros2_control/GazeboSystem</plugin>
         </xacro:if>
+
         <xacro:if value="${sim_ignition}">
           <plugin>ign_ros2_control/IgnitionSystem</plugin>
         </xacro:if>
+
+        <!-- Route A (simulation / fake hardware) -->
         <xacro:if value="${use_fake_hardware}">
           <plugin>mock_components/GenericSystem</plugin>
           <param name="fake_sensor_commands">${fake_sensor_commands}</param>
           <param name="state_following_offset">0.0</param>
           <param name="calculate_dynamics">true</param>
         </xacro:if>
+
+        <!-- Real hardware ONLY -->
         <xacro:unless value="${use_fake_hardware or sim_gazebo or sim_ignition}">
           <plugin>ur_robot_driver/URPositionHardwareInterface</plugin>
           <param name="robot_ip">${robot_ip}</param>
@@ -66,68 +71,68 @@
           <param name="keep_alive_count">${keep_alive_count}</param>
         </xacro:unless>
       </hardware>
+
+      <!-- ================= ARM JOINTS ONLY =================
+           IMPORTANT:
+           - Do NOT put any Robotiq joints here.
+           - Do NOT export GPIO/sensors in fake hardware.
+           - Keep command interface = position only (matches your controller config).
+      -->
+
       <joint name="${tf_prefix}shoulder_pan_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['shoulder_pan_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
+
       <joint name="${tf_prefix}shoulder_lift_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['shoulder_lift_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
+
       <joint name="${tf_prefix}elbow_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['elbow_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
+
       <joint name="${tf_prefix}wrist_1_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['wrist_1_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
+
       <joint name="${tf_prefix}wrist_2_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['wrist_2_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
+
       <joint name="${tf_prefix}wrist_3_joint">
         <command_interface name="position"/>
-        <command_interface name="velocity"/>
         <state_interface name="position">
-          <!-- initial position for the FakeSystem and simulation -->
           <param name="initial_value">${initial_positions['wrist_3_joint']}</param>
         </state_interface>
         <state_interface name="velocity"/>
-        <state_interface name="effort"/>
       </joint>
 
-      <xacro:unless value="${sim_gazebo or sim_ignition}">
+      <!-- ================= REAL HW ONLY: sensors + GPIO =================
+           These interfaces are NOT exported by mock_components/GenericSystem.
+           So keep them ONLY for real hardware.
+      -->
+      <xacro:unless value="${use_fake_hardware or sim_gazebo or sim_ignition}">
+
         <sensor name="${tf_prefix}tcp_fts_sensor">
           <state_interface name="force.x"/>
           <state_interface name="force.y"/>
@@ -147,7 +152,6 @@
           <state_interface name="orientation.w"/>
         </sensor>
 
-        <!-- NOTE The following are joints used only for testing with fake hardware and will change in the future -->
         <gpio name="${tf_prefix}speed_scaling">
           <state_interface name="speed_scaling_factor"/>
           <param name="initial_speed_scaling_factor">1</param>
@@ -180,7 +184,6 @@
           <command_interface name="analog_output_domain_cmd"/>
 
           <command_interface name="tool_voltage_cmd"/>
-
           <command_interface name="io_async_success"/>
 
           <state_interface name="digital_output_0"/>
@@ -223,7 +226,6 @@
 
           <state_interface name="standard_analog_output_0"/>
           <state_interface name="standard_analog_output_1"/>
-
           <state_interface name="standard_analog_input_0"/>
           <state_interface name="standard_analog_input_1"/>
 
@@ -239,7 +241,6 @@
 
           <state_interface name="tool_analog_input_0"/>
           <state_interface name="tool_analog_input_1"/>
-
           <state_interface name="tool_analog_input_type_0"/>
           <state_interface name="tool_analog_input_type_1"/>
 
@@ -305,60 +306,60 @@
         </gpio>
 
         <gpio name="${tf_prefix}force_mode">
-        <command_interface name="task_frame_x"/>
-        <command_interface name="task_frame_y"/>
-        <command_interface name="task_frame_z"/>
-        <command_interface name="task_frame_rx"/>
-        <command_interface name="task_frame_ry"/>
-        <command_interface name="task_frame_rz"/>
-        <command_interface name="selection_vector_x"/>
-        <command_interface name="selection_vector_y"/>
-        <command_interface name="selection_vector_z"/>
-        <command_interface name="selection_vector_rx"/>
-        <command_interface name="selection_vector_ry"/>
-        <command_interface name="selection_vector_rz"/>
-        <command_interface name="wrench_x"/>
-        <command_interface name="wrench_y"/>
-        <command_interface name="wrench_z"/>
-        <command_interface name="wrench_rx"/>
-        <command_interface name="wrench_ry"/>
-        <command_interface name="wrench_rz"/>
-        <command_interface name="limits_x"/>
-        <command_interface name="limits_y"/>
-        <command_interface name="limits_z"/>
-        <command_interface name="limits_rx"/>
-        <command_interface name="limits_ry"/>
-        <command_interface name="limits_rz"/>
-        <command_interface name="type"/>
-        <command_interface name="damping"/>
-        <command_interface name="gain_scaling"/>
-        <command_interface name="disable_cmd"/>
-        <command_interface name="force_mode_async_success"/>
-      </gpio>
+          <command_interface name="task_frame_x"/>
+          <command_interface name="task_frame_y"/>
+          <command_interface name="task_frame_z"/>
+          <command_interface name="task_frame_rx"/>
+          <command_interface name="task_frame_ry"/>
+          <command_interface name="task_frame_rz"/>
+          <command_interface name="selection_vector_x"/>
+          <command_interface name="selection_vector_y"/>
+          <command_interface name="selection_vector_z"/>
+          <command_interface name="selection_vector_rx"/>
+          <command_interface name="selection_vector_ry"/>
+          <command_interface name="selection_vector_rz"/>
+          <command_interface name="wrench_x"/>
+          <command_interface name="wrench_y"/>
+          <command_interface name="wrench_z"/>
+          <command_interface name="wrench_rx"/>
+          <command_interface name="wrench_ry"/>
+          <command_interface name="wrench_rz"/>
+          <command_interface name="limits_x"/>
+          <command_interface name="limits_y"/>
+          <command_interface name="limits_z"/>
+          <command_interface name="limits_rx"/>
+          <command_interface name="limits_ry"/>
+          <command_interface name="limits_rz"/>
+          <command_interface name="type"/>
+          <command_interface name="damping"/>
+          <command_interface name="gain_scaling"/>
+          <command_interface name="disable_cmd"/>
+          <command_interface name="force_mode_async_success"/>
+        </gpio>
 
-      <gpio name="${tf_prefix}trajectory_passthrough">
-        <command_interface name="setpoint_positions_0"/>
-        <command_interface name="setpoint_positions_1"/>
-        <command_interface name="setpoint_positions_2"/>
-        <command_interface name="setpoint_positions_3"/>
-        <command_interface name="setpoint_positions_4"/>
-        <command_interface name="setpoint_positions_5"/>
-        <command_interface name="setpoint_velocities_0"/>
-        <command_interface name="setpoint_velocities_1"/>
-        <command_interface name="setpoint_velocities_2"/>
-        <command_interface name="setpoint_velocities_3"/>
-        <command_interface name="setpoint_velocities_4"/>
-        <command_interface name="setpoint_velocities_5"/>
-        <command_interface name="setpoint_accelerations_0"/>
-        <command_interface name="setpoint_accelerations_1"/>
-        <command_interface name="setpoint_accelerations_2"/>
-        <command_interface name="setpoint_accelerations_3"/>
-        <command_interface name="setpoint_accelerations_4"/>
-        <command_interface name="setpoint_accelerations_5"/>
-        <command_interface name="transfer_state"/>
-        <command_interface name="time_from_start"/>
-        <command_interface name="abort"/>
-      </gpio>
+        <gpio name="${tf_prefix}trajectory_passthrough">
+          <command_interface name="setpoint_positions_0"/>
+          <command_interface name="setpoint_positions_1"/>
+          <command_interface name="setpoint_positions_2"/>
+          <command_interface name="setpoint_positions_3"/>
+          <command_interface name="setpoint_positions_4"/>
+          <command_interface name="setpoint_positions_5"/>
+          <command_interface name="setpoint_velocities_0"/>
+          <command_interface name="setpoint_velocities_1"/>
+          <command_interface name="setpoint_velocities_2"/>
+          <command_interface name="setpoint_velocities_3"/>
+          <command_interface name="setpoint_velocities_4"/>
+          <command_interface name="setpoint_velocities_5"/>
+          <command_interface name="setpoint_accelerations_0"/>
+          <command_interface name="setpoint_accelerations_1"/>
+          <command_interface name="setpoint_accelerations_2"/>
+          <command_interface name="setpoint_accelerations_3"/>
+          <command_interface name="setpoint_accelerations_4"/>
+          <command_interface name="setpoint_accelerations_5"/>
+          <command_interface name="transfer_state"/>
+          <command_interface name="time_from_start"/>
+          <command_interface name="abort"/>
+        </gpio>
 
         <gpio name="${tf_prefix}get_robot_software_version">
           <state_interface name="get_version_major"/>
@@ -366,6 +367,7 @@
           <state_interface name="get_version_build"/>
           <state_interface name="get_version_bugfix"/>
         </gpio>
+
       </xacro:unless>
 
     </ros2_control>

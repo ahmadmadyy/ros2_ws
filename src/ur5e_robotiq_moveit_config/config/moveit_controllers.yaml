@@ -5,13 +5,14 @@ trajectory_execution:
   allowed_execution_duration_scaling: 1.2
   allowed_goal_duration_margin: 0.5
   allowed_start_tolerance: 0.01
-  execution_duration_monitoring: false # May lead to unexpectedly aborted goals with scaled JTC
+  execution_duration_monitoring: false  # May lead to unexpectedly aborted goals with scaled JTC
 
 moveit_simple_controller_manager:
   controller_names:
     - scaled_joint_trajectory_controller
-    - gripper_controller
+    - robotiq_gripper_controller
 
+  # UR arm (default)
   scaled_joint_trajectory_controller:
     action_ns: follow_joint_trajectory
     type: FollowJointTrajectory
@@ -24,22 +25,12 @@ moveit_simple_controller_manager:
       - wrist_2_joint
       - wrist_3_joint
 
-  gripper_controller:
-    type: FollowJointTrajectory
+  # Robotiq 2F-85 gripper (Route A / fake hardware)
+  # IMPORTANT: Only command the "master" joint.
+  # All other gripper joints are mimic joints and must NOT be commanded.
+  robotiq_gripper_controller:
     action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
     default: false
     joints:
       - rq_robotiq_85_left_knuckle_joint
-      - rq_robotiq_85_right_knuckle_joint
-
-  joint_trajectory_controller:
-    action_ns: follow_joint_trajectory
-    type: FollowJointTrajectory
-    default: false
-    joints:
-      - shoulder_pan_joint
-      - shoulder_lift_joint
-      - elbow_joint
-      - wrist_1_joint
-      - wrist_2_joint
-      - wrist_3_joint
