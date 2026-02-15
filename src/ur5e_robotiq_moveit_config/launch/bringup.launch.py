@@ -76,7 +76,7 @@ def generate_launch_description():
     gripper_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["robotiq_gripper_controller", "--controller-manager", "/controller_manager"],
+        arguments=["gripper_controller", "--controller-manager", "/controller_manager"],
         output="screen",
     )
 
@@ -100,6 +100,17 @@ def generate_launch_description():
         "warehouse_plugin": "warehouse_ros_sqlite::DatabaseConnection",
         "warehouse_host": warehouse_sqlite_path,
     }
+
+    # Publish TF from URDF + /joint_states
+    robot_state_publisher = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="screen",
+        parameters=[
+            moveit_config.robot_description,
+            {"use_sim_time": use_sim_time},
+        ],
+    )
 
     move_group_node = Node(
         package="moveit_ros_move_group",
@@ -157,8 +168,10 @@ def generate_launch_description():
         )
     )
 
-    # Order matters: publish /robot_description first, then controller_manager, then MoveIt
+    # Order matters: publish /robot_description first, then robot_state_publisher (TF),
+    # then controller_manager, then MoveIt
     ld.add_action(robot_description_publisher)
+    ld.add_action(robot_state_publisher)
     ld.add_action(ros2_control_node)
     ld.add_action(spawn_after_cm)
     ld.add_action(move_group_node)

@@ -18,26 +18,24 @@ def generate_launch_description():
         launch_arguments={"ur_type": ur_type}.items(),
     )
 
-    plan_node = Node(
+    gripper_node = Node(
         package="api_robot",
-        executable="goal_pose_plan_only",
-        name="goal_pose_plan_only",
+        executable="gripper_control",
+        name="gripper_control",
         output="screen",
         parameters=[{
-            # use_relative_target=False → use target_position/target_quat below
-            # use_relative_target=True  → use delta_xyz offset from current pose
-            "use_relative_target": False,
-            # Gripper pointing DOWN: tool0 Z-axis = world -Z = 180 deg around X.
-            # Position is in front of the robot at a comfortable table height.
-            "target_position": [0.30, 0.10, 0.30],
-            "target_quat": [1.0, 0.0, 0.0, 0.0],
+            "gripper_action": "/gripper_controller/gripper_cmd",
+            # Robotiq 2F-85: 0.0 = fully open, ~0.78 = fully closed
+            "gripper_open":  0.0,
+            "gripper_close": 0.78,
+            "max_effort":    0.0,
         }],
     )
 
-    delayed_plan = TimerAction(period=6.0, actions=[plan_node])
+    delayed_node = TimerAction(period=6.0, actions=[gripper_node])
 
     return LaunchDescription([
         DeclareLaunchArgument("ur_type", default_value="ur5e"),
         bringup,
-        delayed_plan,
+        delayed_node,
     ])

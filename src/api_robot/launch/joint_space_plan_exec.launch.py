@@ -18,26 +18,30 @@ def generate_launch_description():
         launch_arguments={"ur_type": ur_type}.items(),
     )
 
-    plan_node = Node(
+    plan_exec_node = Node(
         package="api_robot",
-        executable="goal_pose_plan_only",
-        name="goal_pose_plan_only",
+        executable="joint_space_plan_exec",
+        name="joint_space_plan_exec",
         output="screen",
         parameters=[{
-            # use_relative_target=False → use target_position/target_quat below
-            # use_relative_target=True  → use delta_xyz offset from current pose
-            "use_relative_target": False,
-            # Gripper pointing DOWN: tool0 Z-axis = world -Z = 180 deg around X.
-            # Position is in front of the robot at a comfortable table height.
-            "target_position": [0.30, 0.10, 0.30],
-            "target_quat": [1.0, 0.0, 0.0, 0.0],
+            "arm_group":    "ur_manipulator",
+            "planning_time": 10.0,
+            "num_attempts":  10,
+
+            # 6 joint angles [rad]:
+            #   [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3]
+            #
+            # Named SRDF states for reference:
+            #   home : [0.0, -1.5708,  0.0,      0.0,     0.0, 0.0]
+            #   up   : [0.0, -1.5708,  0.0,     -1.5708,  0.0, 0.0]
+            "arm_joint_target": [0.0, -2.3562, 1.5708, -1.5708, -1.5708, 0.0],
         }],
     )
 
-    delayed_plan = TimerAction(period=6.0, actions=[plan_node])
+    delayed_node = TimerAction(period=6.0, actions=[plan_exec_node])
 
     return LaunchDescription([
         DeclareLaunchArgument("ur_type", default_value="ur5e"),
         bringup,
-        delayed_plan,
+        delayed_node,
     ])

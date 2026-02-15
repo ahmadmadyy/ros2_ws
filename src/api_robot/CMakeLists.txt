@@ -50,12 +50,27 @@ ament_target_dependencies(goal_pose_plan_only
   moveit_ros_planning_interface
 )
 
+add_executable(joint_space_plan_exec src/joint_space_plan_exec.cpp)
+ament_target_dependencies(joint_space_plan_exec
+  rclcpp
+  moveit_ros_planning_interface
+)
+
+add_executable(gripper_control src/gripper_control.cpp)
+ament_target_dependencies(gripper_control
+  rclcpp
+  rclcpp_action
+  control_msgs
+)
+
 
 install(TARGETS
   joint_slider_teleop
   joint_space_demo
   joint_space_plan_only
   goal_pose_plan_only
+  joint_space_plan_exec
+  gripper_control
   DESTINATION lib/${PROJECT_NAME}
 )
 
