@@ -14,6 +14,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/publish_robot_description.py
+  scripts/spawn_scene_objects.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,0 +1,61 @@
+What was created
+New package: src/robot_agent/ (20 files)
+Core architecture:
+
+main.py - Entry point: rclpy MultiThreadedExecutor in daemon thread + uvicorn FastAPI on main thread
+agent_node.py - Central ROS2 node that owns all clients, recorder, skills, and Cosmos integration
+app.py - FastAPI app with 12 REST endpoints
+models.py - Pydantic request/response schemas
+MoveIt2 + Gripper (rclpy action clients):
+
+moveit_client.py - Raw action client to /move_group and /execute_trajectory (replicates your C++ nodes in Python)
+gripper_client.py - GripperCommand action client to /gripper_controller/gripper_cmd
+6 Skills: move_to_joints, move_to_pose, home, gripper, pick, place (pick/place are compound multi-step skills)
+
+State Recorder: Records /joint_states during execution, stores traces by ID
+
+Cosmos Integration:
+
+cosmos_client.py - Async httpx client to vLLM's OpenAI-compatible API
+explainability.py - Sends execution traces to Cosmos for reasoning
+task_planner.py - NL instruction decomposition into skill sequences via Cosmos
+How to run
+Terminal 1 - MoveIt bringup:
+
+
+source install/setup.bash
+ros2 launch ur5e_robotiq_moveit_config bringup.launch.py
+Terminal 2 - Cosmos Reason2 (on H100):
+
+
+pip install vllm
+vllm serve nvidia/Cosmos-Reason2-2B \
+  --max-model-len 16384 \
+  --reasoning-parser qwen3 \
+  --port 8000
+Terminal 3 - Robot Agent:
+
+
+source install/setup.bash
+ros2 run robot_agent robot_agent
+Test endpoints:
+
+
+# Health check
+curl localhost:8080/api/v1/health
+
+# Read state
+curl localhost:8080/api/v1/state
+
+# Move to home
+curl -X POST localhost:8080/api/v1/skill/home -H 'Content-Type: application/json' -d '{"params":{}}'
+
+# List skills
+curl localhost:8080/api/v1/skills
+
+# Plan via Cosmos
+curl -X POST localhost:8080/api/v1/plan -H 'Content-Type: application/json' \
+  -d '{"instruction":"pick up the object and place it on the table"}'
+
+# Explain a trace
+curl -X POST localhost:8080/api/v1/explain/{trace_id}

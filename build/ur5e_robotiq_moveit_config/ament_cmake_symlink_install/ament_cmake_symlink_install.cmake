@@ -318,8 +318,8 @@ message(STATUS "Execute custom install script")
 # install(DIRECTORY "launch" "config" "srdf" "urdf" "DESTINATION" "share/ur5e_robotiq_moveit_config")
 ament_cmake_symlink_install_directory("/home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config" DIRECTORY "launch" "config" "srdf" "urdf" "DESTINATION" "share/ur5e_robotiq_moveit_config")
 
-# install(PROGRAMS "scripts/publish_robot_description.py" "DESTINATION" "lib/ur5e_robotiq_moveit_config")
-ament_cmake_symlink_install_programs("/home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config" PROGRAMS "scripts/publish_robot_description.py" "DESTINATION" "lib/ur5e_robotiq_moveit_config")
+# install(PROGRAMS "scripts/publish_robot_description.py" "scripts/spawn_scene_objects.py" "DESTINATION" "lib/ur5e_robotiq_moveit_config")
+ament_cmake_symlink_install_programs("/home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config" PROGRAMS "scripts/publish_robot_description.py" "scripts/spawn_scene_objects.py" "DESTINATION" "lib/ur5e_robotiq_moveit_config")
 
 # install(FILES "/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/ur5e_robotiq_moveit_config" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
 ament_cmake_symlink_install_files("/home/ubuntu/ros2_ws/src/ur5e_robotiq_moveit_config" FILES "/home/ubuntu/ros2_ws/build/ur5e_robotiq_moveit_config/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/ur5e_robotiq_moveit_config" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")

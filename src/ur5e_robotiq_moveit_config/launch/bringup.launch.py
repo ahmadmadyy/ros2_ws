@@ -154,6 +154,19 @@ def generate_launch_description():
         ],
     )
 
+    # Spawn planning-scene objects (ground plane + screwdriver) once move_group is up
+    scene_spawner = Node(
+        package=PKG,
+        executable="spawn_scene_objects.py",
+        output="screen",
+    )
+    spawn_scene_after_mg = RegisterEventHandler(
+        OnProcessStart(
+            target_action=move_group_node,
+            on_start=[scene_spawner],
+        )
+    )
+
     ld = LaunchDescription()
     ld.add_action(DeclareLaunchArgument("ur_type", default_value="ur5e"))
     ld.add_action(DeclareLaunchArgument("launch_rviz", default_value="true"))
@@ -175,6 +188,7 @@ def generate_launch_description():
     ld.add_action(ros2_control_node)
     ld.add_action(spawn_after_cm)
     ld.add_action(move_group_node)
+    ld.add_action(spawn_scene_after_mg)
     ld.add_action(rviz_node)
     ld.add_action(servo_node)
     return ld

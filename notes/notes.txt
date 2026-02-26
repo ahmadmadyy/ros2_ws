@@ -30,10 +30,9 @@ ros2 topic pub -1 /api_robot/gripper_target std_msgs/msg/Float64 "{data: 0.4}"
 ros2 topic pub -1 /api_robot/arm_target std_msgs/msg/Float64MultiArray   
 "{data: [0.0, -1.2, 1.2, -1.57, 0.0, 0.0]}"
 
+ros2 run ur5e_isaac_sim_jazzy launch_isaac_sim_ros2_jazzy.sh
 
 
-TODO:
-in parallel, i want to use moveit api to control a robot like this: 
-https://github.com/ahmadmadyy/UR3e-Pick-and-Place-/tree/main/ros2_ws/src/moveit2_scripts/src
-i want it called api_robot and i want to create a c++ script first 
-that makes me control the robot joints from sliders and even control the gripper
+pkill -9 -f move_group
+pkill -9 -f ros2_control_node
+ros2 daemon stop && ros2 daemon start

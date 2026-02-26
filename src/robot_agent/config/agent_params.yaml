@@ -1,0 +1,7 @@
+robot_agent:
+  ros__parameters:
+    # Change cosmos_model to match whichever vLLM server you started:
+    #   "nvidia/Cosmos-Reason2-2B"  (24GB VRAM, faster)
+    #   "nvidia/Cosmos-Reason2-8B"  (32GB VRAM, better reasoning)
+    cosmos_url: "http://localhost:8000"
+    cosmos_model: "nvidia/Cosmos-Reason2-8B"

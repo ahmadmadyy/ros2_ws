@@ -1,0 +1,7 @@
+isaac_bridge:
+  # Topic consumed by Isaac Sim ROS2 Subscribe JointState node.
+  joint_commands_topic: /isaac_joint_commands
+  # Optional topic from Isaac Sim ROS2 Publish JointState node.
+  joint_states_topic: /isaac_joint_states
+  # Source in ROS side (from ros2_control joint_state_broadcaster).
+  source_joint_states_topic: /joint_states
