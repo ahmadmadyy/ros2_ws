@@ -1,93 +1,15 @@
 import json
+import os
 import re
+from pathlib import Path
 
 from ..recorder.execution_trace import ExecutionTrace
 from .ollama_client import OllamaClient
 
 
-# ---------------------------------------------------------------------------
-# PROMPT 2 — sent to Llama (judge)
-# Role: Receive Cosmos's trajectory analysis and produce structured scores.
-# This prompt intentionally does NOT re-send the raw trajectory — the judge
-# works from the Cosmos reasoning alone, assessing reasoning quality + outcome.
-# ---------------------------------------------------------------------------
-
-_JUDGE_SYSTEM_PROMPT = """\
-You are an expert judge evaluating the quality of an AI reasoning model's \
-analysis of a robot manipulation task. You will be given:
-1. The task context (what the robot was asked to do, object location, scene).
-2. The full analysis produced by Cosmos Reason2 after observing the robot's \
-joint trajectory.
-
-Your job is to judge how good that analysis is and whether it correctly \
-assessed the task outcome. Score each dimension 1 (poor) to 5 (excellent)."""
-
-
-_JUDGE_USER_TEMPLATE = """\
-## Task Context
-- **Instruction**: {instruction}
-- **Object**: {object_name} at position {pick_position}
-- **Place target**: {place_description}
-- **Robot**: UR5e 6-DOF arm + Robotiq 2F-85 gripper
-- **Expected grasp height** (tool0): {grasp_z:.3f} m
-- **Expected gripper position at grasp**: {grasp_gripper_rad:.2f} rad
-
-## Cosmos Reason2 Analysis
-{cosmos_analysis}
-
----
-
-## Evaluation Rubric
-
-Score each dimension 1–5 with a one-sentence justification.
-
-### Reasoning Quality
-1. **Spatial Awareness** (1–5): Did Cosmos correctly identify object positions, \
-approach/grasp heights, and spatial relationships from the trajectory?
-2. **Plan Coherence** (1–5): Are the identified phases logically ordered and \
-physically plausible? Are there missing phases or contradictions?
-3. **Safety Awareness** (1–5): Did Cosmos flag collision risks, joint-limit issues, \
-or gripper constraint violations where relevant?
-
-### Task Outcome Assessment
-4. **Goal Achievement** (1–5): Did Cosmos correctly assess whether the pick succeeded \
-(gripper closed at right height + object attached + arm retreated)? \
-5 = clear, evidence-backed verdict; 1 = no verdict or clearly wrong.
-5. **Anomaly Detection** (1–5): Did Cosmos correctly identify stationary segments, \
-sudden jumps, or timing issues in the trajectory?
-
-### Feedback Quality
-6. **Corrective Feedback** (1–5): If the task failed or was suboptimal, are the \
-corrections specific, actionable, and numerically grounded? \
-If the task succeeded and Cosmos correctly said so, score 5.
-7. **Consistency** (1–5): Is Cosmos's stated phase segmentation consistent with \
-its success verdict and its corrective feedback? No internal contradictions?
-
-## Output Format
-Return ONLY valid JSON with exactly this structure:
-{{
-  "spatial_awareness":   {{"score": <int 1-5>, "justification": "<str>"}},
-  "plan_coherence":      {{"score": <int 1-5>, "justification": "<str>"}},
-  "safety_awareness":    {{"score": <int 1-5>, "justification": "<str>"}},
-  "goal_achievement":    {{"score": <int 1-5>, "justification": "<str>"}},
-  "anomaly_detection":   {{"score": <int 1-5>, "justification": "<str>"}},
-  "corrective_feedback": {{"score": <int 1-5>, "justification": "<str>"}},
-  "consistency":         {{"score": <int 1-5>, "justification": "<str>"}},
-  "overall_score":       <float>,
-  "task_outcome":        "<succeeded | failed | uncertain>",
-  "critical_failures":   ["<list any serious errors in the Cosmos analysis>"],
-  "suggestions":         ["<list ways the Cosmos analysis could be improved>"]
-}}
-
-Compute overall_score as the weighted average:
-  Goal Achievement:    25%
-  Consistency:         20%
-  Plan Coherence:      15%
-  Corrective Feedback: 15%
-  Safety Awareness:    10%
-  Anomaly Detection:   10%
-  Spatial Awareness:    5%"""
-
+# Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
+_WS_ROOT = Path(os.environ.get("ROBOT_WS", Path.home() / "ros2_ws"))
+_EVAL_PROMPT_FILE = _WS_ROOT / "prompts" / "eval_prompt.txt"
 
 # Weights must sum to 1.0
 _WEIGHTS = {
@@ -105,9 +27,8 @@ class EvaluationEngine:
     """
     Judges Cosmos Reason2's trajectory analysis using a local Llama model.
 
-    Pipeline:
-        Trace → Cosmos (explainability.py) → cosmos_analysis (str)
-        cosmos_analysis + task context → Llama (this class) → structured scores
+    Pipeline (Stage 2 of 2):
+        cosmos_analysis + eval_prompt.txt + trajectory JSON → Llama → structured scores
     """
 
     def __init__(self, ollama_client: OllamaClient):
@@ -126,26 +47,36 @@ class EvaluationEngine:
         # screwdriver-specific defaults (used for context in judge prompt)
         grasp_z: float = 0.26,
         grasp_gripper_rad: float = 0.57,
+        max_trajectory_rows: int = 15,
     ) -> dict:
         """
-        Send Cosmos's analysis to Llama for judging.
+        Stage 2: Load eval_prompt.txt, inject Cosmos output + trajectory JSON +
+        task context, send to Llama for evaluation.
         Returns a dict with per-dimension scores + overall_score.
         """
         instruction = task_description or trace.label
 
-        prompt = _JUDGE_USER_TEMPLATE.format(
-            instruction=instruction,
-            object_name=object_name,
-            pick_position=pick_position,
-            place_description=place_position,
-            grasp_z=grasp_z,
-            grasp_gripper_rad=grasp_gripper_rad,
-            cosmos_analysis=cosmos_reasoning_text or "(no Cosmos analysis provided)",
+        trajectory_json = json.dumps(
+            trace.to_trajectory_json(max_rows=max_trajectory_rows), indent=2
+        )
+
+        # Load the eval_prompt.txt template and fill in all fields
+        prompt_template = _EVAL_PROMPT_FILE.read_text()
+
+        prompt = (
+            prompt_template
+            .replace("{task_description}", instruction)
+            .replace("{object_name}", object_name)
+            .replace("{pick_position}", pick_position)
+            .replace("{place_position}", place_position)
+            .replace("{robot_description}", robot_description)
+            .replace("{cosmos_reasoning_text}", cosmos_reasoning_text or "(no Cosmos analysis provided)")
+            .replace("{joint_trajectory_json}", trajectory_json)
         )
 
         raw = await self._ollama.chat(
             prompt,
-            system=_JUDGE_SYSTEM_PROMPT,
+            system="",
             json_format=True,
             temperature=0.1,
         )

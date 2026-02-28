@@ -1,8 +1,17 @@
 import asyncio
 import json as _json
+import os as _os
 from contextlib import asynccontextmanager
+from datetime import datetime as _datetime
 from pathlib import Path as _Path
 from typing import Optional
+
+# Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
+_WS_ROOT = _Path(_os.environ.get("ROBOT_WS", _Path.home() / "ros2_ws"))
+_COSMOS_OUT_DIR = _WS_ROOT / "outputs" / "cosmos"
+_EVAL_OUT_DIR   = _WS_ROOT / "outputs" / "eval"
+_COSMOS_OUT_DIR.mkdir(parents=True, exist_ok=True)
+_EVAL_OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -323,7 +332,10 @@ def create_app(node: AgentNode) -> FastAPI:
     @app.post("/api/v1/traces/load")
     async def load_trace_from_disk(file_path: str):
         """
-        Load a pick_trace_*.json file from disk into the in-memory trace store.
+        Load a pick_place_box_*.json file from disk into the in-memory trace store.
+        Accepts both formats:
+          - snapshots format: {"snapshots": [{timestamp, joint_names, positions, velocities}]}
+          - trajectory format: {"trajectory": [{t, joints}]}
         Returns the trace_id so you can pass it to /analyze or /evaluate.
         """
         p = _Path(file_path)
@@ -333,28 +345,45 @@ def create_app(node: AgentNode) -> FastAPI:
         with open(p) as f:
             data = _json.load(f)
 
-        trajectory = data.get("trajectory", [])
-        if not trajectory:
-            raise HTTPException(status_code=400, detail="No trajectory data in file")
-
-        joint_names = list(trajectory[0]["joints"].keys())
-        base_time = 1_700_000_000.0
-        snapshots = [
-            JointSnapshot(
-                timestamp=base_time + float(row["t"]),
-                joint_names=joint_names,
-                positions=[float(row["joints"].get(j, 0.0)) for j in joint_names],
-                velocities=[0.0] * len(joint_names),
-            )
-            for row in trajectory
-        ]
+        if "snapshots" in data and data["snapshots"]:
+            # Format saved by test_pick_place_box.py
+            raw = data["snapshots"]
+            snapshots = [
+                JointSnapshot(
+                    timestamp=float(s["timestamp"]),
+                    joint_names=s["joint_names"],
+                    positions=[float(v) for v in s["positions"]],
+                    velocities=[float(v) for v in s.get("velocities", [0.0] * len(s["positions"]))],
+                )
+                for s in raw
+            ]
+            start_time = float(raw[0]["timestamp"])
+            end_time   = float(raw[-1]["timestamp"])
+        elif "trajectory" in data and data["trajectory"]:
+            # Legacy trajectory format
+            trajectory = data["trajectory"]
+            joint_names = list(trajectory[0]["joints"].keys())
+            base_time = 1_700_000_000.0
+            snapshots = [
+                JointSnapshot(
+                    timestamp=base_time + float(row["t"]),
+                    joint_names=joint_names,
+                    positions=[float(row["joints"].get(j, 0.0)) for j in joint_names],
+                    velocities=[0.0] * len(joint_names),
+                )
+                for row in trajectory
+            ]
+            start_time = base_time + float(trajectory[0]["t"])
+            end_time   = base_time + float(trajectory[-1]["t"])
+        else:
+            raise HTTPException(status_code=400, detail="No snapshots or trajectory data in file")
 
         trace = ExecutionTrace(
             trace_id=data.get("trace_id", p.stem),
             label=data.get("label", "loaded"),
             snapshots=snapshots,
-            start_time=base_time + float(trajectory[0]["t"]),
-            end_time=base_time + float(trajectory[-1]["t"]),
+            start_time=start_time,
+            end_time=end_time,
         )
         _node.recorder.traces[trace.trace_id] = trace
         return {
@@ -416,6 +445,14 @@ def create_app(node: AgentNode) -> FastAPI:
             grasp_z=req.grasp_z,
             grasp_gripper_rad=req.grasp_gripper_rad,
         )
+
+        # Auto-save outputs with datetime-stamped filenames
+        ts = _datetime.now().strftime("%Y%m%d_%H%M%S")
+        cosmos_file = _COSMOS_OUT_DIR / f"cosmos_{trace.trace_id}_{ts}.txt"
+        cosmos_file.write_text(cosmos_analysis)
+        eval_payload = {k: v for k, v in result.items() if k not in ("trace_id", "trace_label")}
+        eval_file = _EVAL_OUT_DIR / f"eval_{trace.trace_id}_{ts}.json"
+        eval_file.write_text(_json.dumps(eval_payload, indent=2))
 
         return AnalyzeResponse(
             trace_id=trace.trace_id,

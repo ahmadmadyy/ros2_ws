@@ -1,116 +1,14 @@
 import json
+import os
+from pathlib import Path
 
 from ..recorder.execution_trace import ExecutionTrace
 from .cosmos_client import CosmosClient
 
 
-# ---------------------------------------------------------------------------
-# PROMPT 1 — sent to Cosmos Reason2
-# Role: Deep trajectory analysis, phase segmentation, success assessment,
-#       corrective feedback, replanning waypoints.
-# UR5e + Robotiq 2F-85 config is pre-filled in the system prompt so the
-# user message only needs task-specific values.
-# ---------------------------------------------------------------------------
-
-_COSMOS_SYSTEM_PROMPT = """\
-You are a robotic manipulation reasoning model specialised in analysing UR5e \
-joint trajectories. You observe recorded joint states, segment the motion into \
-semantic phases, assess task success, and provide concrete corrective feedback \
-or replanning waypoints.
-
-## Robot Configuration
-- **Arm**: Universal Robots UR5e — 6-DOF serial manipulator, 850 mm reach, 5 kg payload
-- **Joints** (in order, all in radians, limits ±6.28 rad):
-    1. shoulder_pan_joint   — base rotation  (+ = counter-clockwise from above)
-    2. shoulder_lift_joint  — upper-arm pitch (−π/2 ≈ arm horizontal forward)
-    3. elbow_joint          — forearm pitch   (+ folds toward shoulder)
-    4. wrist_1_joint        — wrist pitch
-    5. wrist_2_joint        — wrist roll
-    6. wrist_3_joint        — tool rotation
-- **Home configuration**: [0, −1.571, 0, −1.571, 0, 0] rad
-  → arm upright, end-effector facing straight down, ready to reach forward
-- **End-effector link**: tool0
-
-## Gripper
-- **Model**: Robotiq 2F-85 parallel-finger gripper
-- **Recorded joint**: rq_robotiq_85_left_knuckle_joint
-  - 0.00 rad → fully open  (85 mm between finger tips)
-  - 0.79 rad → fully closed (0 mm gap)
-  - ~0.57 rad → ~24 mm gap (matches a standard screwdriver shaft)
-- **Finger-tip offset**: ~0.17 m below tool0 when fully open
-- **Top-down grasp orientation**: qx=1, qy=0, qz=0, qw=0 (tool0 Z pointing toward −world_Z)
-
-## Trajectory Format
-The trajectory is a JSON list of objects {{t, joints}} where:
-- t      = seconds elapsed since task start
-- joints = mapping of joint_name → angle in radians (arm joints + gripper)
-A stationary segment (all joints constant across many rows) typically means
-the controller is planning, waiting for IK, or the gripper is actuating."""
-
-
-_COSMOS_USER_TEMPLATE = """\
-## Task
-- **Instruction**: {instruction}
-- **Object to pick**: {object_name}
-  - Position in base_link frame: x={pick_x:.3f} m, y={pick_y:.3f} m, z={pick_z:.3f} m (object CoM)
-  - Object dimensions: {object_dims}
-- **Target tool0 grasp height**: z = {grasp_z:.3f} m \
-(finger tips ≈ {fingertip_z:.3f} m — should align with object CoM)
-- **Approach height** (tool0 above object before descending): z = {approach_z:.3f} m
-- **Retreat height**  (tool0 after grasping, lifting clear): z = {retreat_z:.3f} m
-- **Expected gripper position at grasp**: ≈ {grasp_gripper_rad:.2f} rad
-- **Place target**: {place_description}
-- **Scene context**: {scene_context}
-
-## Recorded Joint Trajectory
-```json
-{trajectory_json}
-```
-
----
-
-## Your Analysis
-
-### 1. Phase Segmentation
-Identify each semantic phase in the trajectory. For each provide:
-- **Phase name** (e.g. idle / approach / descend / grasp / retreat)
-- **Time range** (t_start … t_end s)
-- **Dominant joint movements** (which joints moved significantly and by how much)
-- **Gripper state** at the start and end of the phase (open / closing / closed / value in rad)
-
-### 2. Task Success Assessment
-For each question answer Yes / No / Uncertain, and cite evidence from the trajectory:
-a) Did the arm reach the approach position (tool0 z ≈ {approach_z:.3f} m) before descending?
-b) Did the gripper close at approximately the correct grasp height (tool0 z ≈ {grasp_z:.3f} m)?
-c) Was the gripper closing position ≈ {grasp_gripper_rad:.2f} rad (matching object width)?
-d) Did the arm successfully retreat with the object after grasping?
-e) Were there anomalies (flat/stationary segments, sudden joint jumps >0.3 rad per timestep, \
-gripper state changes at unexpected heights)?
-
-### 3. Spatial Reasoning
-Describe how tool0 moved through Cartesian space. Was the descent vertical? \
-Was the approach angle appropriate for a top-down pick? \
-Was the motion efficient, or were there unnecessary detours? \
-Estimate key Cartesian positions from the joint values where possible.
-
-### 4. Corrective Feedback
-If the task failed or was suboptimal, provide numbered, specific corrections with concrete values \
-(e.g. "Increase grasp_z from {grasp_z:.3f} to {corrected_z:.3f} m to account for finger-tip offset"). \
-If no corrections are needed write: **No corrections required.**
-
-### 5. Revised Waypoints
-If replanning is needed output waypoints as JSON (omit this section if task succeeded):
-```json
-[
-  {{
-    "phase": "<name>",
-    "joints": [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3],
-    "gripper_rad": <0.0–0.79>,
-    "note": "<rationale>"
-  }}
-]
-```
-If the task succeeded write: **Task succeeded — no replanning required.**"""
+# Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
+_WS_ROOT = Path(os.environ.get("ROBOT_WS", Path.home() / "ros2_ws"))
+_COSMOS_PROMPT_FILE = _WS_ROOT / "prompts" / "cosmos.txt"
 
 
 class ExplainabilityEngine:
@@ -120,7 +18,9 @@ class ExplainabilityEngine:
         self._cosmos = cosmos_client
 
     # ------------------------------------------------------------------
-    # Primary: full structured analysis (Prompt 1 — sent to Cosmos)
+    # Primary: full structured analysis — Stage 1 of 2-stage pipeline
+    # Loads cosmos.txt prompt, injects trajectory JSON + task context,
+    # sends to Cosmos Reason2.
     # ------------------------------------------------------------------
 
     async def analyze_trace(
@@ -144,37 +44,44 @@ class ExplainabilityEngine:
         max_trajectory_rows: int = 15,
     ) -> str:
         """
-        Format the trace with Prompt 1 and send to Cosmos.
-        Returns Cosmos's full reasoning text.
+        Stage 1: Load cosmos.txt prompt, inject trajectory JSON + task context,
+        send to Cosmos Reason2. Returns Cosmos's full reasoning text.
         """
-        fingertip_z  = grasp_z - 0.17
-        approach_z   = grasp_z + approach_height
-        retreat_z    = grasp_z + retreat_height
-        corrected_z  = grasp_z + 0.02  # used in the corrective feedback placeholder
-
         trajectory_json = json.dumps(
             trace.to_trajectory_json(max_rows=max_trajectory_rows), indent=2
         )
 
-        user_msg = _COSMOS_USER_TEMPLATE.format(
-            instruction=instruction,
-            object_name=object_name,
-            pick_x=pick_x, pick_y=pick_y, pick_z=pick_z,
-            object_dims=object_dims,
-            grasp_z=grasp_z,
-            fingertip_z=fingertip_z,
-            approach_z=approach_z,
-            retreat_z=retreat_z,
-            grasp_gripper_rad=grasp_gripper_rad,
-            place_description=place_description,
-            scene_context=scene_context,
-            trajectory_json=trajectory_json,
-            corrected_z=corrected_z,
+        # Derive joint names from the trace if available
+        if trace.snapshots:
+            joint_names_str = ", ".join(trace.snapshots[0].joint_names)
+        else:
+            joint_names_str = (
+                "shoulder_pan_joint, shoulder_lift_joint, elbow_joint, "
+                "wrist_1_joint, wrist_2_joint, wrist_3_joint, "
+                "rq_robotiq_85_left_knuckle_joint"
+            )
+
+        # Load the cosmos.txt prompt template
+        prompt_template = _COSMOS_PROMPT_FILE.read_text()
+
+        cosmos_prompt = (
+            prompt_template
+            .replace("{robot_description}", "UR5e 6-DOF arm with Robotiq 2F-85 gripper")
+            .replace("{joint_names}", joint_names_str)
+            .replace("{joint_limits}", "±6.28 rad for all arm joints; gripper 0.0–0.79 rad")
+            .replace("{gripper_type}", "Robotiq 2F-85 (0.0 rad = open, 0.79 rad = closed)")
+            .replace("{natural_language_task}", instruction)
+            .replace("{object_name}", object_name)
+            .replace("{pick_position}", f"[{pick_x:.3f}, {pick_y:.3f}, {pick_z:.3f}]")
+            .replace("{pick_orientation}", "upright")
+            .replace("{place_position}", place_description)
+            .replace("{place_orientation}", "any")
+            .replace("{scene_context}", scene_context)
+            .replace("{joint_trajectory_json}", trajectory_json)
         )
 
         messages = [
-            {"role": "system", "content": _COSMOS_SYSTEM_PROMPT},
-            {"role": "user",   "content": user_msg},
+            {"role": "user", "content": cosmos_prompt},
         ]
 
         return await self._cosmos.chat_completion(messages, max_tokens=3000)

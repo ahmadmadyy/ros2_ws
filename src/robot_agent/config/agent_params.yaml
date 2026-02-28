@@ -4,4 +4,4 @@ robot_agent:
     #   "nvidia/Cosmos-Reason2-2B"  (24GB VRAM, faster)
     #   "nvidia/Cosmos-Reason2-8B"  (32GB VRAM, better reasoning)
     cosmos_url: "http://localhost:8000"
-    cosmos_model: "nvidia/Cosmos-Reason2-8B"
+    cosmos_model: "nvidia/Cosmos-Reason2-2B"

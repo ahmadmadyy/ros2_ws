@@ -42,7 +42,7 @@ from moveit_msgs.msg import (
 )
 from moveit_msgs.srv import ApplyPlanningScene
 
-sys.path.insert(0, str(Path(__file__).parent / "src" / "robot_agent"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "robot_agent"))
 
 from robot_agent.moveit_client import MoveItClient, ARM_JOINTS
 from robot_agent.gripper_client import GripperClient
@@ -249,7 +249,8 @@ def detach_and_add_to_world(node: Node,
 def save_trace(trace, output_dir: Path = None) -> Path:
     """Serialise an ExecutionTrace to a timestamped JSON file."""
     if output_dir is None:
-        output_dir = Path(__file__).parent
+        output_dir = Path(__file__).parent.parent / "outputs" / "pick_trace"
+    output_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = output_dir / f"pick_place_box_{ts}.json"
     data = {
