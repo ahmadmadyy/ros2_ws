@@ -29,7 +29,7 @@ class AgentNode(Node):
 
         # Parameters
         self.declare_parameter('cosmos_url', 'http://localhost:8000')
-        self.declare_parameter('cosmos_model', 'nvidia/Cosmos-Reason2-8B')
+        self.declare_parameter('cosmos_model', 'nvidia/Cosmos-Reason2-2B')
         self.declare_parameter('ollama_url', 'http://localhost:11434')
         self.declare_parameter('ollama_model', 'llama3:latest')
 

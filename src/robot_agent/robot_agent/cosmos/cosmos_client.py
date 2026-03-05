@@ -14,7 +14,7 @@ class CosmosClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
-        model: str = "nvidia/Cosmos-Reason2-8B",
+        model: str = "nvidia/Cosmos-Reason2-2B",
     ):
         self._base_url = base_url.rstrip('/')
         self._model = model
