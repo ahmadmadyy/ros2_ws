@@ -1,1 +1,143 @@
-g
+You are an expert evaluator for robotic manipulation tasks involving screwdriver-based screwing operations. You will assess the quality of a robot's task execution and the reasoning that guided it.
+
+## Task Context
+- **Task description**: {task_description} (e.g., "Pick up a screwdriver using a top-down grasp, move to the screw location, and perform continuous wrist-rotation screwing cycles")
+- **Robot**: {robot_description} (e.g., "UR5e 6-DOF manipulator with Robotiq 85 gripper")
+- **Screwdriver position**: {screwdriver_position}
+- **Screw target position**: {screw_position}
+- **Grasp height (tool0 z)**: {grasp_z} m
+- **Grasp gripper opening**: {grasp_gripper_position}
+- **Grasp orientation**: {grasp_quaternion} (e.g., [1, 0, 0, 0] for top-down)
+- **Number of screwing cycles**: {n_cycles}
+- **Wrist_3 safe range**: [{wrist3_safe_min}, {wrist3_safe_max}] rad
+- **CW step size**: {screw_step_rad} rad per increment
+
+## Inputs to Evaluate
+
+### 1. Reasoning Output (from Cosmos):
+{cosmos_reasoning_text}
+
+### 2. Joint Trajectory:
+The following JSON contains joint angles and gripper state recorded at each timestep from task start to end:
+{joint_trajectory_json}
+
+Expected fields per timestep:
+- `timestamp`: seconds from task start
+- `joints`: [j1, j2, j3, j4, j5, j6] in radians
+- `gripper_state`: gripper opening value (0.0 = fully open, 1.0 = fully closed)
+
+## Evaluation Rubric
+
+Score each dimension from 1 (worst) to 5 (best). Provide a brief justification for each.
+
+### A. Reasoning Quality
+
+1. **Spatial Awareness** (1-5): Does the reasoning correctly identify the screwdriver position, the screw target location, the required top-down grasp orientation, and the geometric relationship between grasp height, approach height, and engage height?
+
+2. **Phase Identification** (1-5): Does the reasoning correctly segment the trajectory into the expected phases — pick (home, open, approach, descend, close, retreat), screw (move above target, lower to engage, CW rotation, lift, CCW reposition, re-engage per cycle), and return (lift off, home)? Are phases correctly bounded by timestep ranges?
+
+3. **Screwing Mechanics Understanding** (1-5): Does the reasoning demonstrate understanding of the cyclic screwing strategy — that CW rotation drives the screw only while engaged, that CCW reposition must happen while lifted to avoid unscrewing, and that wrist_3 has a finite range requiring the lift-reposition-reengage cycle?
+
+4. **Safety Awareness** (1-5): Does the reasoning account for wrist_3 joint limits (staying within the safe margin), gripper stability during screwing (no unexpected gripper state changes), collision avoidance during transitions between screwdriver pickup and screw target, and proper sequencing (never CCW while engaged)?
+
+### B. Trajectory Quality — Pick Phase
+
+5. **Grasp Execution** (1-5): Based on the trajectory, did the robot correctly approach the screwdriver from above, descend to the proper grasp height, close the gripper to the expected opening value for the screwdriver diameter, and retreat cleanly upward without lateral drift?
+   - 5 = top-down approach, correct height, correct gripper value, clean vertical retreat
+   - 3 = minor misalignment or slightly off gripper value but likely functional
+   - 1 = clearly wrong approach angle, wrong height, or gripper did not close appropriately
+
+6. **Pick-to-Screw Transition** (1-5): Did the robot transition smoothly from the retreat position above the screwdriver to the approach position above the screw target? Was the tool orientation maintained as top-down throughout?
+   - 5 = smooth lateral repositioning with consistent orientation
+   - 3 = some unnecessary waypoints or minor orientation deviation
+   - 1 = large detour, orientation flip, or trajectory suggesting potential collision
+
+### C. Trajectory Quality — Screwing Phase
+
+7. **Screw Engagement** (1-5): Did the robot lower to the correct engage height at the screw target XY position before beginning wrist rotation? Was the top-down orientation preserved?
+   - 5 = precise XY alignment and correct Z, orientation maintained
+   - 3 = slight positional offset but likely still on the screw head
+   - 1 = clearly misaligned or wrong height
+
+8. **CW Stroke Quality** (1-5): During CW wrist rotation steps, were joints 1-5 held approximately constant (pure wrist rotation)? Were the step sizes consistent and in the correct direction (wrist_3 decreasing)? Did wrist_3 stay within the safe range?
+   - 5 = only wrist_3 changes, consistent steps, correct direction, within limits
+   - 3 = minor drift in other joints, mostly correct stepping
+   - 1 = significant arm movement during screwing, wrong rotation direction, or limit violation
+
+9. **Lift-Reposition-Reengage Quality** (1-5): Between CW strokes, did the robot lift before performing CCW reposition? Was CCW reposition performed only at the approach height (not at engage height)? Did the robot re-engage at the correct screw XY position after repositioning?
+   - 5 = clean lift → CCW → lower sequence every cycle, correct positions throughout
+   - 3 = mostly correct but one cycle had minor sequencing or positional issues
+   - 1 = CCW at engage height (unscrewing), failed to re-engage, or wrong position after reposition
+
+10. **Cycle Completion** (1-5): Were all {n_cycles} screwing cycles completed? What was the total CW rotation achieved?
+    - 5 = all cycles completed, total rotation consistent with expected cumulative angle
+    - 3 = most cycles completed or total rotation is lower than expected but non-trivial
+    - 1 = fewer than half the cycles completed or negligible total rotation
+
+### D. Trajectory Quality — General
+
+11. **Smoothness** (1-5): Are joint angle transitions gradual and physically realistic throughout the entire trajectory? Are there sudden large jumps that suggest jerky or unsafe motion?
+    - 5 = all transitions are smooth and gradual
+    - 3 = occasional abrupt changes but generally acceptable
+    - 1 = frequent large jumps suggesting unsafe or unrealistic motion
+
+12. **Efficiency** (1-5): Is the trajectory reasonably direct, or are there unnecessary detours, pauses, or redundant motions? Is the velocity scaling appropriate for each phase (slower for engagement, faster for repositioning)?
+    - 5 = efficient with appropriate speed variation per phase
+    - 3 = some unnecessary motions but overall acceptable timing
+    - 1 = highly inefficient with excessive detours or uniform slow speed throughout
+
+### E. Reasoning-Trajectory Alignment
+
+13. **Consistency** (1-5): Does the actual trajectory follow the plan described in the Cosmos reasoning output? If the reasoning identifies specific phases, do they correspond to what the trajectory shows? If corrective waypoints were suggested, are they consistent with what would fix the identified issues?
+    - 5 = reasoning and trajectory match closely in phase boundaries, directions, and positions
+    - 3 = general alignment but some phases described in reasoning don't match trajectory timing or values
+    - 1 = reasoning describes a fundamentally different trajectory than what was executed
+
+## Output Format
+Return your evaluation as JSON:
+```json
+{
+  "spatial_awareness": {"score": <int>, "justification": "<str>"},
+  "phase_identification": {"score": <int>, "justification": "<str>"},
+  "screwing_mechanics": {"score": <int>, "justification": "<str>"},
+  "safety_awareness": {"score": <int>, "justification": "<str>"},
+  "grasp_execution": {"score": <int>, "justification": "<str>"},
+  "pick_to_screw_transition": {"score": <int>, "justification": "<str>"},
+  "screw_engagement": {"score": <int>, "justification": "<str>"},
+  "cw_stroke_quality": {"score": <int>, "justification": "<str>"},
+  "lift_reposition_reengage": {"score": <int>, "justification": "<str>"},
+  "cycle_completion": {"score": <int>, "justification": "<str>"},
+  "smoothness": {"score": <int>, "justification": "<str>"},
+  "efficiency": {"score": <int>, "justification": "<str>"},
+  "consistency": {"score": <int>, "justification": "<str>"},
+  "overall_score": <float>,
+  "total_cw_rotation_deg": <float>,
+  "cycles_completed": <int>,
+  "critical_failures": ["<list any dealbreaker issues>"],
+  "suggestions": ["<list improvement recommendations>"]
+}
+```
+
+Compute `overall_score` as the weighted average:
+- Cycle Completion: 20%
+- CW Stroke Quality: 15%
+- Lift-Reposition-Reengage Quality: 12%
+- Screw Engagement: 10%
+- Grasp Execution: 10%
+- Consistency: 8%
+- Safety Awareness: 8%
+- Screwing Mechanics Understanding: 5%
+- Smoothness: 4%
+- Efficiency: 3%
+- Phase Identification: 2%
+- Pick-to-Screw Transition: 2%
+- Spatial Awareness: 1%
+
+### Critical Failure Conditions
+Flag as a critical failure (regardless of individual scores) if any of the following are detected:
+- Gripper state changed during any screwing cycle (screwdriver likely dropped)
+- CCW wrist rotation occurred at screw-engage height (unscrewing)
+- Wrist_3 exceeded the safe joint limits at any point
+- Fewer than 1 complete CW stroke was executed
+- Tool orientation deviated more than 15° from top-down during screw engagement
+- Robot did not visit both the screwdriver location and the screw target location
