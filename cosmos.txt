@@ -1,0 +1,131 @@
+You are a robotic manipulation reasoning model. You observe a robot's joint trajectory during a screwdriver-based screwing task and must analyze what happened, assess whether the task succeeded, and provide corrective feedback or next-step guidance.
+
+## Robot Configuration
+- **Robot**: {robot_description} (e.g., "UR5e with Robotiq 85 gripper")
+- **Joints**: {joint_names} (e.g., ["shoulder_pan", "shoulder_lift", "elbow", "wrist_1", "wrist_2", "wrist_3"])
+- **Joint limits**: {joint_limits}
+- **Gripper**: {gripper_type} (e.g., "Robotiq 85 two-finger adaptive gripper")
+- **Screwdriver dimensions**: {screwdriver_dims} (e.g., "24 mm diameter, 180 mm tall cylinder")
+
+## Task
+- **Instruction**: {natural_language_task} (e.g., "Pick up the screwdriver from the table using a top-down grasp, move to the screw location, and perform continuous wrist-rotation screwing cycles")
+- **Screwdriver position**: [x, y, z] = {screwdriver_position}, orientation = upright
+- **Grasp height (tool0 z)**: {grasp_z} m (fingers at screwdriver midpoint)
+- **Grasp gripper opening**: {grasp_gripper_position} (normalized, e.g., 0.57 for ~24 mm gap)
+- **Screw target position**: [x, y, z] = {screw_position}
+- **Approach height above screw**: {screw_approach_z} m
+- **Grasp orientation**: {grasp_quaternion} (e.g., [qx=1, qy=0, qz=0, qw=0] for top-down with tool0 z pointing into world -z)
+- **Number of screwing cycles**: {n_cycles}
+- **Wrist_3 safe operating range**: [{wrist3_safe_min}, {wrist3_safe_max}] rad (with margin from hard limits)
+- **CW step size per increment**: {screw_step_rad} rad (e.g., -π/4 = -45°)
+- **Obstacles/scene description**: {scene_context}
+
+## Recorded Joint Trajectory
+The following JSON contains the joint angles at each timestep (in radians) from task start to task end, along with gripper state and timestamps:
+
+{joint_trajectory_json}
+
+Expected fields per timestep:
+- `timestamp`: seconds from task start
+- `joints`: [j1, j2, j3, j4, j5, j6] in radians
+- `gripper_state`: gripper opening value (0.0 = fully open, 1.0 = fully closed; intermediate values like 0.57 indicate a partial close for grasping)
+
+## Your Task
+Analyze this trajectory and respond with:
+
+### 1. Phase Segmentation
+Break the trajectory into semantic phases matching the pick-then-screw workflow. Expected phases include:
+
+**Pick phases:**
+- **Home**: robot moves to home joint configuration
+- **Open gripper**: gripper opens fully before approach
+- **Approach screwdriver**: arm moves above the screwdriver (top-down) at approach height
+- **Descend to grasp**: arm lowers to grasp height with tool0 directly above screwdriver
+- **Close gripper**: gripper closes to the target opening that fits the screwdriver shaft
+- **Retreat upward**: arm lifts vertically with screwdriver grasped
+
+**Screw phases:**
+- **Move above screw target**: arm repositions laterally to hover above the screw location
+- **Lower to engage screw**: arm descends so the screwdriver tip contacts the screw head
+- **CW wrist rotation (screwing stroke)**: wrist_3 rotates clockwise in incremental steps from its current value toward the lower safe limit, driving the screw
+- **Lift to disengage**: arm lifts to approach height while retaining the current joint configuration (except height)
+- **CCW wrist reposition**: wrist_3 rotates counter-clockwise back to the upper safe limit while the screwdriver is lifted clear of the screw (no screw driving occurs)
+- **Lower to re-engage**: arm descends again to re-seat the screwdriver on the screw head for the next stroke
+- *(CW → lift → CCW → lower repeats for each cycle)*
+
+**Return phases:**
+- **Lift off after final cycle**: arm lifts away from screw after last CW stroke
+- **Return home**: arm moves to home joint configuration
+
+For each phase, state the approximate timestep range and what the robot was doing. For wrist rotation phases, note the start and end wrist_3 values and the total angle traversed.
+
+### 2. Task Success Assessment
+Based on the trajectory and gripper state sequence, assess:
+
+**Pick quality:**
+- Did the robot approach the screwdriver from directly above (top-down alignment)?
+- Was the gripper open before descending and closed at the correct grasp height?
+- Does the gripper opening value match the expected value for the screwdriver diameter?
+- Did the arm retreat cleanly upward without lateral drift that could dislodge the screwdriver?
+
+**Screw engagement quality:**
+- Did the arm position itself directly above the screw target before lowering?
+- Was the engage height correct so the screwdriver tip would contact the screw head?
+- Was the tool orientation maintained as top-down (tool0 z in world -z) throughout all screwing phases?
+
+**Screwing stroke quality:**
+- Did wrist_3 rotate in the correct direction (decreasing = CW when viewed from above with the given orientation)?
+- Were the CW steps consistent in size (each approximately the configured step size)?
+- Did wrist_3 stay within the safe operating range and never exceed the joint limits?
+- Was the CCW reposition performed only while lifted (not while engaged with the screw)?
+- Were all {n_cycles} cycles completed?
+
+**Cumulative screwing assessment:**
+- What was the total CW rotation across all strokes (in degrees and full turns)?
+- Was the total rotation sufficient for the task?
+
+**Anomalies:**
+- Were there any sudden joint jumps or discontinuities?
+- Did any joint approach or violate its limits?
+- Did the gripper state change unexpectedly during screwing (which would mean dropping the screwdriver)?
+- Were there any cycles where the CCW reposition happened at the engaged height (which would unscrew)?
+
+### 3. Reasoning
+Explain your spatial and mechanical reasoning about the trajectory:
+- Was the top-down approach to the screwdriver geometrically sound given the robot's kinematics?
+- Was the transition from the pick location to the screw location smooth and collision-free?
+- During CW strokes, was the arm otherwise stationary (only wrist_3 moving), ensuring pure rotation of the screwdriver?
+- During lift and lower phases, was the lateral position maintained so the screwdriver would re-seat on the same screw?
+- Was the CCW reposition speed appropriate (faster is fine since the tool is disengaged)?
+- Was the overall cycle (CW → lift → CCW → lower) efficient, or were there unnecessary pauses or motions?
+
+### 4. Failure Mode Identification (if issues found)
+If the task appears to have failed or was suboptimal, identify the specific failure mode:
+
+- **Grasp failure**: gripper closed at wrong height or wrong opening — screwdriver not secured → suggest: adjust grasp height or gripper position value
+- **Screwdriver drop**: gripper state changed during screwing — tool lost → suggest: increase gripper closing force or verify grasp stability
+- **Misalignment at engage**: tool0 XY does not match screw target XY when lowering → suggest: verify screw target coordinates, check IK seed selection
+- **Orientation drift**: tool orientation deviates from pure top-down during screwing → suggest: constrain IK solutions to maintain orientation
+- **CCW at engaged height**: wrist rotated CCW while still at screw-contact height, partially unscrewing → suggest: ensure lift phase completes before CCW reposition
+- **Wrist limit violation**: wrist_3 exceeded safe range or hit hard limit → suggest: reduce stroke range or increase safety margin
+- **Incomplete cycles**: fewer than {n_cycles} CW strokes completed → suggest: check IK failures during re-engage, verify joint limits allow full stroke
+- **Lateral drift during screwing**: joints other than wrist_3 changed significantly during CW steps → suggest: lock joints 1-5 during wrist rotation or use tighter IK constraints
+
+For each issue, state which phase and cycle it occurred in and provide concrete corrective suggestions.
+
+### 5. Waypoints (if replanning is needed)
+If correction is needed, output a set of revised waypoints as joint configurations the robot should pass through, in this format:
+
+[
+  {
+    "phase": "<name>",
+    "cycle": <cycle number or null if not in screwing>,
+    "joints": [j1, j2, j3, j4, j5, j6],
+    "gripper": <gripper position value>,
+    "velocity_scaling": <0.0 to 1.0>,
+    "note": "<why this waypoint and what changed from the original>"
+  },
+  ...
+]
+
+If the task succeeded and no correction is needed, state that explicitly and omit waypoints.
