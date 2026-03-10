@@ -8,18 +8,24 @@ from .cosmos_client import CosmosClient
 
 # Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
 _WS_ROOT = Path(os.environ.get("ROBOT_WS", Path.home() / "ros2_ws"))
-_COSMOS_PROMPT_FILE = _WS_ROOT / "prompts" / "cosmos.txt"
+_PROMPTS_DIR = _WS_ROOT / "prompts"
+_DEFAULT_COSMOS_PROMPT = "cosmos_screwing_phases.txt"
 
 
 class ExplainabilityEngine:
     """Sends execution traces to Cosmos Reason2 for deep trajectory analysis."""
 
-    def __init__(self, cosmos_client: CosmosClient):
+    def __init__(self, cosmos_client: CosmosClient, prompt_file: str = _DEFAULT_COSMOS_PROMPT):
         self._cosmos = cosmos_client
+        self.prompt_file = prompt_file  # filename within prompts/
+
+    @property
+    def prompt_path(self) -> Path:
+        return _PROMPTS_DIR / self.prompt_file
 
     # ------------------------------------------------------------------
     # Primary: full structured analysis — Stage 1 of 2-stage pipeline
-    # Loads cosmos.txt prompt, injects trajectory JSON + task context,
+    # Loads selected prompt file, injects trajectory JSON + task context,
     # sends to Cosmos Reason2.
     # ------------------------------------------------------------------
 
@@ -42,11 +48,16 @@ class ExplainabilityEngine:
             "No other obstacles. Robot base is at world origin."
         ),
         max_trajectory_rows: int = 15,
+        prompt_file: str = None,
     ) -> str:
         """
-        Stage 1: Load cosmos.txt prompt, inject trajectory JSON + task context,
+        Stage 1: Load prompt file, inject trajectory JSON + task context,
         send to Cosmos Reason2. Returns Cosmos's full reasoning text.
+
+        prompt_file: override the instance-level prompt for this call only.
         """
+        active_prompt = _PROMPTS_DIR / (prompt_file or self.prompt_file)
+
         trajectory_json = json.dumps(
             trace.to_trajectory_json(max_rows=max_trajectory_rows), indent=2
         )
@@ -61,8 +72,7 @@ class ExplainabilityEngine:
                 "rq_robotiq_85_left_knuckle_joint"
             )
 
-        # Load the cosmos.txt prompt template
-        prompt_template = _COSMOS_PROMPT_FILE.read_text()
+        prompt_template = active_prompt.read_text()
 
         cosmos_prompt = (
             prompt_template

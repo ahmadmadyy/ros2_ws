@@ -4,7 +4,7 @@ import os as _os
 from contextlib import asynccontextmanager
 from datetime import datetime as _datetime
 from pathlib import Path as _Path
-from typing import Optional
+from typing import Optional, List
 
 # Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
 _WS_ROOT = _Path(_os.environ.get("ROBOT_WS", _Path.home() / "ros2_ws"))
@@ -314,6 +314,38 @@ def create_app(node: AgentNode) -> FastAPI:
 
         return EvaluateResponse(**result)
 
+    # ---- Prompt Management ----
+
+    @app.get("/api/v1/prompts")
+    async def list_prompts():
+        """List all available prompt files in the prompts/ directory."""
+        prompts_dir = _Path(_os.environ.get("ROBOT_WS", _Path.home() / "ros2_ws")) / "prompts"
+        files = sorted(p.name for p in prompts_dir.glob("*.txt"))
+        return {
+            "active_cosmos_prompt": _node.explainability.prompt_file,
+            "active_eval_prompt":   _node.evaluator.prompt_file,
+            "available_prompts":    files,
+        }
+
+    @app.post("/api/v1/prompts")
+    async def switch_prompts(cosmos_prompt: str = None, eval_prompt: str = None):
+        """Switch the active cosmos and/or eval prompt at runtime."""
+        prompts_dir = _Path(_os.environ.get("ROBOT_WS", _Path.home() / "ros2_ws")) / "prompts"
+        if cosmos_prompt:
+            p = prompts_dir / cosmos_prompt
+            if not p.exists():
+                raise HTTPException(status_code=404, detail=f"Prompt file not found: {cosmos_prompt}")
+            _node.explainability.prompt_file = cosmos_prompt
+        if eval_prompt:
+            p = prompts_dir / eval_prompt
+            if not p.exists():
+                raise HTTPException(status_code=404, detail=f"Prompt file not found: {eval_prompt}")
+            _node.evaluator.prompt_file = eval_prompt
+        return {
+            "active_cosmos_prompt": _node.explainability.prompt_file,
+            "active_eval_prompt":   _node.evaluator.prompt_file,
+        }
+
     # ---- Ollama / Evaluator info ----
 
     @app.get("/api/v1/ollama")
@@ -432,6 +464,7 @@ def create_app(node: AgentNode) -> FastAPI:
                 grasp_gripper_rad=req.grasp_gripper_rad,
                 place_description=req.place_description,
                 scene_context=req.scene_context,
+                prompt_file=req.cosmos_prompt,  # None = use active default
             )
 
         # Step 2: Llama judge (Prompt 2)
@@ -444,6 +477,7 @@ def create_app(node: AgentNode) -> FastAPI:
             place_position=req.place_description,
             grasp_z=req.grasp_z,
             grasp_gripper_rad=req.grasp_gripper_rad,
+            prompt_file=req.eval_prompt,  # None = use active default
         )
 
         # Auto-save outputs with datetime-stamped filenames

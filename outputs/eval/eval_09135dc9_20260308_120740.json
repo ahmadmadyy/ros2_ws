@@ -1,0 +1,38 @@
+{
+  "spatial_awareness": {
+    "score": 4,
+    "justification": "The robot's reasoning correctly identifies the object position and spatial relationships."
+  },
+  "plan_coherence": {
+    "score": 3,
+    "justification": "The plan is mostly coherent, but there are some minor inconsistencies in the approach phase."
+  },
+  "safety_awareness": {
+    "score": 4,
+    "justification": "The robot's reasoning accounts for collision avoidance and joint limits."
+  },
+  "goal_achievement": {
+    "score": 5,
+    "justification": "The final pose is consistent with the goal position."
+  },
+  "efficiency": {
+    "score": 3,
+    "justification": "The trajectory is reasonably direct, but there are some unnecessary detours in the approach phase."
+  },
+  "smoothness": {
+    "score": 4,
+    "justification": "The joint angle transitions are generally gradual and physically realistic."
+  },
+  "consistency": {
+    "score": 5,
+    "justification": "The actual trajectory follows the plan described in the reasoning."
+  },
+  "overall_score": 3.3,
+  "critical_failures": [
+    "Inconsistent approach phase"
+  ],
+  "suggestions": [
+    "Improve spatial awareness by considering more obstacles",
+    "Optimize the approach phase for better efficiency"
+  ]
+}

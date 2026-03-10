@@ -1,45 +1,26 @@
 #!/usr/bin/env python3
 """
-Continuous-screwing simulation — TOP-DOWN grasp.
+Continuous-screwing simulation — TOP-DOWN grasp + Cosmos/Llama trace recording.
 
-Simulates a realistic hand-screwdriver operation where the wrist has a finite
-joint range, requiring a lift-and-reposition between strokes.
+Identical to test_screw_continuous.py but records a joint-state trace and
+saves it to outputs/screw_trace/ for analysis via the robot_agent pipeline:
 
-Sequence:
-  Pick phase (same as test_screw_topdown.py):
-    1–10. Pick screwdriver top-down, attach, move above screw, lower to engage.
+    POST /api/v1/traces/load?file_path=<path>  →  trace_id
+    POST /api/v1/analyze/<trace_id>            →  Cosmos + Llama evaluation
 
-  Screw phase — N_CYCLES cycles of:
-    (a) Rotate wrist_3 CW in 45° steps until WRIST3_SAFE_MIN (~-360°).
-    (b) Lift LIFT_H cm straight up — IK uses the CURRENT (rotated) orientation
-        so the solver keeps wrist_3 in place and only adjusts the arm height.
-    (c) Rotate ONLY wrist_3 CCW to WRIST3_SAFE_MAX (~+360°) — pure joint move,
-        no reorientation of the rest of the arm.
-    (d) Lower back to engage height [skip on last cycle].
-
-  Return:
-    11. Return home.
-
-Key design — orientation tracking:
-  After wrist_3 rotates by Δ from the initial top-down pose q=(1,0,0,0),
-  the new end-effector orientation is:
-      q_rot = (cos(Δ/2), -sin(Δ/2), 0, 0)
-  IK called with this orientation finds joints where wrist_3 ≈ initial + Δ,
-  i.e. the arm only adjusts height and leaves wrist_3 where it is.
-
-Prerequisites (Terminal 1):
-    source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash
-    ros2 launch ur5e_robotiq_moveit_config bringup.launch.py
-
-Then (Terminal 2):
-    source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash
-    python3 ~/ros2_ws/tests/test_screw_continuous.py
+Run sequence:
+    Terminal 1:  ros2 launch ur5e_robotiq_moveit_config bringup.launch.py
+    Terminal 2:  vllm serve nvidia/Cosmos-Reason2-2B ...
+    Terminal 3:  ros2 run robot_agent robot_agent
+    Terminal 4:  python3 ~/ros2_ws/tests/test_screw_continuous_cosmos.py
 """
 
+import json
 import math
 import sys
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 import rclpy
@@ -52,9 +33,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "robot_agent"))
 
 from robot_agent.moveit_client import MoveItClient
 from robot_agent.gripper_client import GripperClient
+from robot_agent.recorder.joint_recorder import JointStateRecorder
 
 # ---------------------------------------------------------------------------
-# Screwdriver / grasp geometry  (same as test_screw_topdown.py)
+# Screwdriver / grasp geometry  (same as test_screw_continuous.py)
 # ---------------------------------------------------------------------------
 SCREWDRIVER_X      = 0.45
 SCREWDRIVER_Y      = 0.00
@@ -67,10 +49,9 @@ GRASP_Z    = SCREWDRIVER_MID_Z + FINGER_TIP_OFFSET   # 0.26 m
 APPROACH_H = 0.18
 RETREAT_H  = 0.20
 
-# Top-down orientation: 180° about world x → tool0 z points in world -z
 GRASP_QX, GRASP_QY, GRASP_QZ, GRASP_QW = 1.0, 0.0, 0.0, 0.0
 
-GRASP_GRIPPER_POSITION = 0.57   # ~24 mm gap
+GRASP_GRIPPER_POSITION = 0.57
 
 HOME_JOINTS = [0.0, -math.pi / 2, 0.0, -math.pi / 2, 0.0, 0.0]
 PICK_SEED   = [0.0, -1.7, 1.8, -1.7, -math.pi / 2, 0.0]
@@ -93,7 +74,7 @@ GRIPPER_LINKS = [
 # ---------------------------------------------------------------------------
 SCREW_X          = 0.40
 SCREW_Y          = 0.10
-SCREW_TOOL0_Z    = GRASP_Z            # 0.26 m — tip at z=0.0
+SCREW_TOOL0_Z    = GRASP_Z
 SCREW_APPROACH_Z = SCREW_TOOL0_Z + 0.15
 
 # ---------------------------------------------------------------------------
@@ -101,14 +82,11 @@ SCREW_APPROACH_Z = SCREW_TOOL0_Z + 0.15
 # ---------------------------------------------------------------------------
 N_CYCLES = 5
 
-# wrist_3 joint limits ≈ ±2π rad; 0.3 rad safety margin from each hard stop
-WRIST3_SAFE_MIN = -(2 * math.pi - 0.3)   # ≈ -5.983 rad
-WRIST3_SAFE_MAX =  (2 * math.pi - 0.3)   # ≈ +5.983 rad
+WRIST3_SAFE_MIN = -(2 * math.pi - 0.3)
+WRIST3_SAFE_MAX =  (2 * math.pi - 0.3)
 
-SCREW_STEP_RAD = -(math.pi / 4)   # -45° per CW step
-
-# Small lift height used to disengage the screwdriver tip between strokes
-LIFT_H = 0.06   # 6 cm
+SCREW_STEP_RAD = -(math.pi / 4)
+LIFT_H         = 0.06
 
 
 # ---------------------------------------------------------------------------
@@ -124,17 +102,6 @@ def make_pose(x, y, z, qx, qy, qz, qw):
 
 
 def q_from_wrist3_delta(initial_wrist3, current_wrist3):
-    """Return (qx, qy, qz, qw) for the end-effector orientation after
-    wrist_3 has moved by (current - initial) rad from the base top-down
-    pose q_initial = (1, 0, 0, 0).
-
-    Derivation (quaternion product q_initial ⊗ q_local_z(Δ)):
-        q_initial = (qx=1, qy=0, qz=0, qw=0)  [180° about world x]
-        q_local_z(Δ) = (0, 0, sin(Δ/2), cos(Δ/2))
-        result = (cos(Δ/2), -sin(Δ/2), 0, 0)
-    IK targeting this orientation finds wrist_3 ≈ initial + Δ,
-    keeping the arm's shoulder/elbow joints mostly unchanged.
-    """
     d = current_wrist3 - initial_wrist3
     return math.cos(d / 2), -math.sin(d / 2), 0.0, 0.0
 
@@ -143,7 +110,6 @@ _last_joints = [None]
 
 
 def ik_and_move(moveit, pose, velocity_scaling=0.3, seeds=None):
-    """Try each IK seed in order; store successful joints in _last_joints."""
     for seed in (seeds or [None]):
         joints = moveit.ik(pose, seed_joints=seed)
         if joints is not None:
@@ -163,7 +129,6 @@ def wait_for_joint_states(node, timeout_sec=20.0):
 
 
 def _ik_first(moveit, pose, seeds):
-    """Return first successful IK result from the seed list, or None."""
     for seed in seeds:
         j = moveit.ik(pose, seed_joints=seed)
         if j is not None:
@@ -171,18 +136,42 @@ def _ik_first(moveit, pose, seeds):
     return None
 
 
+def save_trace(trace) -> Path:
+    out_dir = Path(__file__).parent.parent / "outputs" / "screw_trace"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = out_dir / f"screw_continuous_{ts}.json"
+    data = {
+        "trace_id":       trace.trace_id,
+        "label":          trace.label,
+        "duration_sec":   round(trace.duration_sec, 4),
+        "num_snapshots":  len(trace.snapshots),
+        "snapshots": [
+            {
+                "timestamp":   round(s.timestamp, 6),
+                "joint_names": s.joint_names,
+                "positions":   [round(v, 6) for v in s.positions],
+                "velocities":  [round(v, 6) for v in s.velocities],
+            }
+            for s in trace.snapshots
+        ],
+    }
+    path.write_text(json.dumps(data, indent=2))
+    return path
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-class ScrewContinuousNode(Node):
+class ScrewContinuousCosmosNode(Node):
     def __init__(self):
-        super().__init__("screw_continuous_test")
+        super().__init__("screw_continuous_cosmos_test")
 
 
 def main():
     rclpy.init()
-    node = ScrewContinuousNode()
+    node = ScrewContinuousCosmosNode()
 
     executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(node)
@@ -197,7 +186,13 @@ def main():
 
         moveit = MoveItClient(node)
         gripper = GripperClient(node)
-        node.get_logger().info("MoveIt + gripper clients ready.")
+
+        # Set up joint-state recorder
+        recorder = JointStateRecorder(node)
+        node.create_subscription(
+            JointState, "/joint_states", recorder.on_joint_state, 10
+        )
+        node.get_logger().info("MoveIt + gripper + recorder ready.")
 
         # ------------------------------------------------------------------
         # Cartesian waypoints
@@ -223,9 +218,6 @@ def main():
             GRASP_QX, GRASP_QY, GRASP_QZ, GRASP_QW,
         )
 
-        # ------------------------------------------------------------------
-        # Shared mutable state
-        # ------------------------------------------------------------------
         _engage_joints = [None]
 
         def lower_to_engage_initial():
@@ -242,19 +234,7 @@ def main():
             node.get_logger().error("IK failed for initial engage pose")
             return False
 
-        # ------------------------------------------------------------------
-        # Continuous screwing cycles
-        # ------------------------------------------------------------------
         def run_screw_cycles():
-            """
-            N_CYCLES of:
-              (a) CW wrist_3 rotation to WRIST3_SAFE_MIN  (engaged with screw)
-              (b) Small lift  — IK with current rotated orientation keeps wrist_3
-              (c) CCW wrist_3 to WRIST3_SAFE_MAX  — ONLY joint 5 moves
-              (d) Lower back to engage height  [skipped on last cycle]
-            """
-            # Capture the canonical wrist_3 from the initial IK solution.
-            # All orientation calculations are relative to this value.
             initial_wrist3 = _engage_joints[0][5]
             total_cw_rad   = 0.0
 
@@ -264,7 +244,6 @@ def main():
                     f"(start wrist_3={_engage_joints[0][5]:.3f} rad) ---"
                 )
 
-                # ---- (a) CW screwing until lower joint limit ----
                 joints   = list(_engage_joints[0])
                 start_w3 = joints[5]
                 cw_steps = 0
@@ -285,9 +264,6 @@ def main():
                     f"{math.degrees(total_cw_rad):.0f}° cumulative"
                 )
 
-                # ---- (b) Small lift — orientation matches current wrist_3 ----
-                # q_rot = q_from_wrist3_delta ensures IK keeps wrist_3 in place
-                # and only adjusts shoulder/elbow to raise z by LIFT_H.
                 qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, joints[5])
                 lift_pose   = make_pose(SCREW_X, SCREW_Y, SCREW_TOOL0_Z + LIFT_H,
                                         qx, qy, qz, qw)
@@ -299,18 +275,13 @@ def main():
                     node.get_logger().error(f"Lift motion failed (cycle {cycle})")
                     return False
 
-                # ---- (c) CCW rotation — ONLY wrist_3 (joint 5) changes ----
                 ccw_joints    = list(lift_joints)
                 ccw_joints[5] = WRIST3_SAFE_MAX
                 if not moveit.plan_and_execute_joints(ccw_joints, velocity_scaling=0.5):
                     node.get_logger().error(f"CCW reset failed (cycle {cycle})")
                     return False
-                node.get_logger().info(
-                    f"  CCW reset → wrist_3={WRIST3_SAFE_MAX:.3f} rad")
 
-                # ---- (d) Lower to engage / full lift on last cycle ----
                 if cycle < N_CYCLES:
-                    # Orientation at WRIST3_SAFE_MAX — IK keeps wrist_3 near max
                     qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
                     lower_pose  = make_pose(SCREW_X, SCREW_Y, SCREW_TOOL0_Z,
                                             qx, qy, qz, qw)
@@ -322,10 +293,7 @@ def main():
                         node.get_logger().error(f"Lower motion failed (cycle {cycle})")
                         return False
                     _engage_joints[0] = list(re_engage)
-                    node.get_logger().info(
-                        f"  Lowered: wrist_3={re_engage[5]:.3f} rad")
                 else:
-                    # Last cycle: lift fully to approach height for safe home move
                     qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
                     exit_pose   = make_pose(SCREW_X, SCREW_Y, SCREW_APPROACH_Z,
                                             qx, qy, qz, qw)
@@ -381,15 +349,15 @@ def main():
         ]
 
         print("\n" + "=" * 66)
-        print("  Continuous Screwing — TOP-DOWN grasp")
+        print("  Continuous Screwing + Cosmos Trace — TOP-DOWN grasp")
         print(f"  Pick   x={SCREWDRIVER_X:.2f}  y={SCREWDRIVER_Y:.2f}  "
               f"tool0-z={GRASP_Z:.3f} m")
         print(f"  Screw  x={SCREW_X:.2f}  y={SCREW_Y:.2f}  "
               f"tool0-z={SCREW_TOOL0_Z:.3f} m")
         print(f"  Cycles N={N_CYCLES},  step={math.degrees(abs(SCREW_STEP_RAD)):.0f}°/step CW")
-        print(f"  wrist_3 range: [{WRIST3_SAFE_MIN:.2f}, {WRIST3_SAFE_MAX:.2f}] rad  "
-              f"lift={LIFT_H*100:.0f} cm between strokes")
         print("=" * 66)
+
+        recorder.start_recording("continuous_screw_topdown")
 
         all_ok = True
         for i, (label, fn) in enumerate(steps, 1):
@@ -403,6 +371,18 @@ def main():
                 print("         Aborting sequence.")
                 break
             time.sleep(0.4)
+
+        trace = recorder.stop_recording()
+        if trace and trace.snapshots:
+            out_path = save_trace(trace)
+            print(f"\n  Joint trace saved → {out_path}")
+            print(f"  ({len(trace.snapshots)} snapshots, {trace.duration_sec:.2f} s)")
+            print(f"\n  Load + analyse:")
+            print(f"    TRACE_FILE={out_path}")
+            print(f"    TRACE_ID=$(curl -s -X POST 'http://localhost:8080/api/v1/traces/load?file_path='$TRACE_FILE | python3 -c \"import sys,json; print(json.load(sys.stdin)['trace_id'])\")")
+            print(f"    (then run the analyze curl — see commands_manual.md Step 6)")
+        else:
+            print("\n  WARNING: no trace snapshots recorded.")
 
         print("\n" + "=" * 66)
         print(f"  Result: {'SUCCESS' if all_ok else 'FAILED — see above.'}")

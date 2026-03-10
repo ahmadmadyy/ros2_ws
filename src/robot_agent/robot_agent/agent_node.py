@@ -28,15 +28,20 @@ class AgentNode(Node):
         super().__init__('robot_agent')
 
         # Parameters
-        self.declare_parameter('cosmos_url', 'http://localhost:8000')
+        self.declare_parameter('cosmos_url',   'http://localhost:8000')
         self.declare_parameter('cosmos_model', 'nvidia/Cosmos-Reason2-2B')
-        self.declare_parameter('ollama_url', 'http://localhost:11434')
+        self.declare_parameter('cosmos_size',  '2B')
+        self.declare_parameter('ollama_url',   'http://localhost:11434')
         self.declare_parameter('ollama_model', 'llama3:latest')
+        self.declare_parameter('cosmos_prompt', 'cosmos_screwing_phases.txt')
+        self.declare_parameter('eval_prompt',   'eval_screwing_rubric.txt')
 
-        cosmos_url = self.get_parameter('cosmos_url').get_parameter_value().string_value
-        cosmos_model = self.get_parameter('cosmos_model').get_parameter_value().string_value
-        ollama_url = self.get_parameter('ollama_url').get_parameter_value().string_value
-        ollama_model = self.get_parameter('ollama_model').get_parameter_value().string_value
+        cosmos_url         = self.get_parameter('cosmos_url').get_parameter_value().string_value
+        cosmos_model       = self.get_parameter('cosmos_model').get_parameter_value().string_value
+        ollama_url         = self.get_parameter('ollama_url').get_parameter_value().string_value
+        ollama_model       = self.get_parameter('ollama_model').get_parameter_value().string_value
+        cosmos_prompt_file = self.get_parameter('cosmos_prompt').get_parameter_value().string_value
+        eval_prompt_file   = self.get_parameter('eval_prompt').get_parameter_value().string_value
 
         # Joint state subscriber
         self._latest_joint_state: Optional[JointState] = None
@@ -53,18 +58,20 @@ class AgentNode(Node):
 
         # Cosmos integration
         self.cosmos = CosmosClient(base_url=cosmos_url, model=cosmos_model)
-        self.explainability = ExplainabilityEngine(self.cosmos)
+        self.explainability = ExplainabilityEngine(self.cosmos, prompt_file=cosmos_prompt_file)
         self.planner = CosmosTaskPlanner(self.cosmos)
 
         # Ollama / Llama evaluation
         self.ollama = OllamaClient(base_url=ollama_url, model=ollama_model)
-        self.evaluator = EvaluationEngine(self.ollama)
+        self.evaluator = EvaluationEngine(self.ollama, prompt_file=eval_prompt_file)
 
         # Skills registry
         self._skills: dict[str, BaseSkill] = {}
         self._register_skills()
 
-        self.get_logger().info('AgentNode initialized')
+        self.get_logger().info(
+            f'AgentNode initialized | cosmos_prompt={cosmos_prompt_file} | eval_prompt={eval_prompt_file}'
+        )
 
     def _register_skills(self):
         skills = [
@@ -107,7 +114,6 @@ class AgentNode(Node):
             if arm_vals:
                 state["joint_names"] = list(self.moveit_client.ARM_JOINTS) if hasattr(self.moveit_client, 'ARM_JOINTS') else []
                 state["joint_values"] = arm_vals
-            # Try to get gripper position
             name_to_pos = dict(zip(js.name, js.position))
             gripper_pos = name_to_pos.get('rq_robotiq_85_left_knuckle_joint')
             state["gripper_position"] = gripper_pos

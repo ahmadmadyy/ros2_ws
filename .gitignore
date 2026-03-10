@@ -1,3 +1,5 @@
 /build/*
 /install/*
 /log/*
+# Gemini API key — do not commit
+Cosmos Experiments/.env

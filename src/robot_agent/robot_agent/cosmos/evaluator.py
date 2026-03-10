@@ -9,7 +9,8 @@ from .ollama_client import OllamaClient
 
 # Workspace root: override with ROBOT_WS env variable, default ~/ros2_ws
 _WS_ROOT = Path(os.environ.get("ROBOT_WS", Path.home() / "ros2_ws"))
-_EVAL_PROMPT_FILE = _WS_ROOT / "prompts" / "eval_prompt.txt"
+_PROMPTS_DIR = _WS_ROOT / "prompts"
+_DEFAULT_EVAL_PROMPT = "eval_screwing_rubric.txt"
 
 # Weights must sum to 1.0
 _WEIGHTS = {
@@ -28,11 +29,16 @@ class EvaluationEngine:
     Judges Cosmos Reason2's trajectory analysis using a local Llama model.
 
     Pipeline (Stage 2 of 2):
-        cosmos_analysis + eval_prompt.txt + trajectory JSON → Llama → structured scores
+        cosmos_analysis + eval prompt + trajectory JSON → Llama → structured scores
     """
 
-    def __init__(self, ollama_client: OllamaClient):
+    def __init__(self, ollama_client: OllamaClient, prompt_file: str = _DEFAULT_EVAL_PROMPT):
         self._ollama = ollama_client
+        self.prompt_file = prompt_file  # filename within prompts/
+
+    @property
+    def prompt_path(self) -> Path:
+        return _PROMPTS_DIR / self.prompt_file
 
     async def evaluate(
         self,
@@ -48,20 +54,24 @@ class EvaluationEngine:
         grasp_z: float = 0.26,
         grasp_gripper_rad: float = 0.57,
         max_trajectory_rows: int = 15,
+        prompt_file: str = None,
     ) -> dict:
         """
-        Stage 2: Load eval_prompt.txt, inject Cosmos output + trajectory JSON +
+        Stage 2: Load eval prompt, inject Cosmos output + trajectory JSON +
         task context, send to Llama for evaluation.
         Returns a dict with per-dimension scores + overall_score.
+
+        prompt_file: override the instance-level prompt for this call only.
         """
+        active_prompt = _PROMPTS_DIR / (prompt_file or self.prompt_file)
+
         instruction = task_description or trace.label
 
         trajectory_json = json.dumps(
             trace.to_trajectory_json(max_rows=max_trajectory_rows), indent=2
         )
 
-        # Load the eval_prompt.txt template and fill in all fields
-        prompt_template = _EVAL_PROMPT_FILE.read_text()
+        prompt_template = active_prompt.read_text()
 
         prompt = (
             prompt_template

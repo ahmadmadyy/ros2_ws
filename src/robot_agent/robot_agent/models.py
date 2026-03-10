@@ -126,6 +126,9 @@ class AnalyzeRequest(BaseModel):
     )
     # If provided, skip the Cosmos call (useful for testing Llama judge alone)
     cosmos_analysis: Optional[str] = None
+    # Per-call prompt overrides (filename within prompts/ directory)
+    cosmos_prompt: Optional[str] = None
+    eval_prompt: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):
