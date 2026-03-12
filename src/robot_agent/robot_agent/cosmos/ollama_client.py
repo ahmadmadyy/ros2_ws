@@ -13,7 +13,7 @@ class OllamaClient:
     ):
         self._base_url = base_url.rstrip("/")
         self._model = model
-        self._http = httpx.AsyncClient(timeout=180.0)
+        self._http = httpx.AsyncClient(timeout=360.0)
 
     async def chat(
         self,

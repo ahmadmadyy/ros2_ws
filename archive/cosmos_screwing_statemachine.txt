@@ -1,0 +1,112 @@
+You are a robotic manipulation state-machine verifier. You model a screwdriver-based screwing task as a finite state machine and check that every state transition in the recorded trajectory was valid and that all state invariants held throughout.
+
+## Robot Configuration
+- **Robot**: {robot_description}
+- **Joints**: {joint_names}
+- **Joint limits**: {joint_limits}
+- **Gripper**: {gripper_type}
+- **Screwdriver**: {screwdriver_dims}
+
+## Task
+- **Instruction**: {natural_language_task}
+- **Screwdriver position**: {screwdriver_position}
+- **Screw target**: {screw_position}
+- **Grasp height (tool0 z)**: {grasp_z} m
+- **Gripper at grasp**: {grasp_gripper_position} rad
+- **Grasp orientation (qx,qy,qz,qw)**: {grasp_quaternion}
+- **Screwing cycles**: {n_cycles}
+- **Wrist_3 safe range**: [{wrist3_safe_min}, {wrist3_safe_max}] rad
+- **CW step size**: {screw_step_rad} rad
+- **Scene**: {scene_context}
+
+## Recorded Joint Trajectory
+{joint_trajectory_json}
+
+Fields per timestep: `timestamp`, `joints` [j1..j6] in radians, `gripper_state` (0.0=open, 1.0=closed).
+
+---
+
+## State Machine Definition
+
+| # | State | Entry Condition | Invariant | Exit Condition |
+|---|---|---|---|---|
+| S0 | HOME | task start | joints ≈ home config | all joints at home |
+| S1 | GRIPPER_OPEN | at home | gripper_state = 0.0 | gripper fully open |
+| S2 | APPROACH_SCREWDRIVER | gripper open | tool0 XY ≈ screwdriver XY; Z > {grasp_z}; top-down | tool0 above screwdriver at approach height |
+| S3 | DESCEND_TO_GRASP | above screwdriver | XY preserved; orientation preserved; gripper open | tool0 Z ≈ {grasp_z} |
+| S4 | GRASP | at grasp height | XY ≈ screwdriver; Z ≈ {grasp_z} | gripper_state ≈ {grasp_gripper_position} |
+| S5 | RETREAT | gripper closed | gripper closed; orientation preserved | Z > {grasp_z} + retreat clearance |
+| S6 | MOVE_ABOVE_SCREW | holding screwdriver | gripper closed; orientation preserved | tool0 XY ≈ screw XY; Z ≈ approach Z |
+| S7 | ENGAGE_SCREW | above screw | tool0 XY ≈ screw XY; gripper closed; top-down | Z ≈ {grasp_z} |
+| S8 | CW_ROTATE | engaged | joints[0:5] ≈ constant; wrist_3 decreasing; gripper closed; wrist_3 ≥ {wrist3_safe_min} | wrist_3 ≈ {wrist3_safe_min} |
+| S9 | LIFT_DISENGAGE | CW stroke done | tool0 XY ≈ screw XY; gripper closed | Z ≈ approach Z |
+| S10 | CCW_REPOSITION | lifted | Z ≈ approach Z (NOT engage Z); gripper closed; wrist_3 increasing | wrist_3 ≈ {wrist3_safe_max} |
+| S11 | RE_ENGAGE | CCW done, not last cycle | tool0 XY ≈ screw XY; gripper closed | Z ≈ {grasp_z} → return to S8 |
+| S12 | FINAL_LIFT | last cycle done | gripper closed | Z ≈ approach Z |
+| S13 | RETURN_HOME | lifted after screwing | — | joints ≈ home config |
+
+Valid transitions: S0→S1→S2→S3→S4→S5→S6→S7→S8→S9→S10→S11→S8 (repeat {n_cycles} times) →S10→S12→S13
+
+---
+
+## Analysis
+
+### 1. State Trace
+Map each timestep range to a state. Format:
+```
+[t0–t12] S0:HOME, [t13–t18] S1:GRIPPER_OPEN, [t19–t45] S2:APPROACH_SCREWDRIVER, ...
+```
+
+### 2. Invariant Verification
+For each state visited, check that its invariant held at every timestep within that state.
+Report: **PASS** (held throughout), **WARN** (minor deviation — quantify), **FAIL** (clearly violated — state timestep and values).
+
+### 3. Transition Legality
+For each observed state transition, check:
+- Was the exit condition of the previous state met before transitioning?
+- Is the transition in the valid set?
+- Were there any illegal transitions (e.g., CCW reposition while at engage height, CW rotation without prior engagement)?
+
+### 4. Cumulative Metrics
+- Total CW rotation (degrees and full turns)
+- Number of complete screwing cycles
+- Total task duration
+- Time spent in pick phase, screw phase, return phase
+
+### 5. Violations Summary Table
+
+| Severity | State | Timestep | Invariant / Condition | Expected | Observed |
+|---|---|---|---|---|---|
+
+---
+
+## Common Structured Output
+
+After completing the analysis above, output **only** this JSON block. Every field is required. Do not add extra fields.
+
+```json
+{
+  "task_success":        {"score": <1-5>, "justification": "<one sentence>"},
+  "phase_correctness":   {"score": <1-5>, "justification": "<one sentence>"},
+  "screwing_quality":    {"score": <1-5>, "justification": "<one sentence>"},
+  "anomaly_severity":    {"score": <1-5>, "justification": "<one sentence — 5=no violations, 1=critical invariant failure>"},
+  "corrective_guidance": {"score": <1-5>, "justification": "<one sentence>"},
+  "overall_score": <float 0.0-1.0>,
+  "critical_failures": ["<string describing failure 1>", "<string describing failure 2>"],
+  "recommended_waypoints": [
+    {
+      "phase": "<state name e.g. S7:ENGAGE_SCREW>",
+      "joints": [j1, j2, j3, j4, j5, j6],
+      "gripper": <0.0-1.0>,
+      "velocity_scaling": <0.0-1.0>,
+      "note": "<which invariant this waypoint satisfies or which violation it corrects>"
+    }
+  ]
+}
+```
+
+Rules:
+- `critical_failures`: array of short strings (one sentence each). Include **only FAIL-severity** invariant violations (not WARN). Maximum 5 entries. If no critical failures, use `[]`.
+- `recommended_waypoints`: 1–3 waypoints maximum. If all invariants passed, include the ideal S7:ENGAGE_SCREW waypoint at {screw_position}, tool0-z={grasp_z} m. If any FAIL, one corrective waypoint per failed invariant.
+- Score guide: 5=excellent, 4=good, 3=acceptable, 2=poor, 1=critical failure.
+- `overall_score` = (task_success×0.30 + phase_correctness×0.20 + screwing_quality×0.25 + anomaly_severity×0.15 + corrective_guidance×0.10) / 5.0

@@ -1,0 +1,79 @@
+### 1. State Trace
+```
+[0.0–12.2] S0:HOME, [13.7–26.9] S1:GRIPPER_OPEN, [26.9–40.3] S2:APPROACH_SCREWDRIVER, [40.3–54.1] S3:DESCEND_TO_GRASP, [54.1–67.7] S4:GRASP, [67.7–80.9] S5:RETRACT, [80.9–94.2] S6:MOVE_ABOVE_SCREW, [94.2–108.1] S7:ENGAGE_SCREW, [108.1–122.6] S8:CW_ROTATE, [122.6–136.2] S9:LIFT_DISENGAGE, [136.2–150.1] S10:CCW_REPOSITION, [150.1–163.8] S11:RE_ENGAGE, [163.8–177.6] S8:CW_ROTATE, [177.6–191.2] S9:LIFT_DISENGAGE, [191.2–205.1] S10:CCW_REPOSITION
+```
+
+### 2. Invariant Verification
+```
+[t0–t12] PASS: joints ≈ home configuration
+[t13–t18] PASS: gripper_state = 0.0 (open)
+[t19–t45] PASS: tool0 XY ≈ screwdriver XY; Z > grasp_z; top-down orientation
+[t45–t67] WARN: tool0 Z ≈ grasp_z (minor deviation)
+[t67–t80] WARN: wrist_3 ≈ wrist3_safe_max (minor deviation)
+[t80–t94] WARN: wrist_3 ≈ wrist3_safe_min (minor deviation)
+[t94–t108] WARN: tool0 XY ≈ screw XY; Z ≈ approach_z (minor deviation)
+[t108–t122] PASS: tool0 XY ≈ screw XY; Z ≈ engage_z
+[t122–t136] WARN: wrist_3 ≈ wrist3_safe_max (minor deviation)
+[t136–t150] WARN: wrist_3 ≈ wrist3_safe_min (minor deviation)
+[t150–t163] WARN: tool0 XY ≈ screw XY; Z ≈ approach_z (minor deviation)
+[t163–t177] WARN: wrist_3 ≈ wrist3_safe_max (minor deviation)
+[t177–t191] WARN: wrist_3 ≈ wrist3_safe_min (minor deviation)
+[t191–t205] WARN: tool0 XY ≈ screw XY; Z ≈ engage_z (minor deviation)
+```
+
+### 3. Transition Legality
+- Valid transitions: S0→S1→S2→S3→S4→S5→S6→S7→S8→S9→S10→S11→S8 (repeat)... →S10→S12→S13
+- Illegal transitions: S10 at engage height, S8 with wrist_3 increasing
+
+### 4. Cumulative Metrics
+- Total CW rotation: ~360 degrees (~1 full turn)
+- Complete cycles: ~1.5 cycles
+- Total task duration: ~150 seconds
+- Time spent:
+  - Pick: ~12 seconds
+  - Screw: ~90 seconds
+  - Return: ~48 seconds
+
+### 5. Violations Summary
+| Severity | State | Timestep | Invariant/Condition | Expected | Observed |
+|----------|-------|----------|---------------------|----------|----------|
+| WARN     | S10   | t150–163 | tool0 XY ≈ screw XY; Z ≈ engage_z | tool0 XY ≈ screw XY; Z ≈ approach_z | tool0 Z ≈ engage_z |
+| WARN     | S10   | t150–163 | wrist_3 ≈ wrist3_safe_max | wrist_3 ≈ wrist3_safe_min | wrist_3 ≈ wrist3_safe_max |
+| WARN     | S11   | t163–177 | tool0 XY ≈ screw XY; Z ≈ approach_z | tool0 XY ≈ screw XY; Z ≈ engage_z | tool0 Z ≈ approach_z |
+| WARN     | S11   | t163–177 | wrist_3 ≈ wrist3_safe_max | wrist_3 ≈ wrist3_safe_min | wrist_3 ≈ wrist3_safe_max |
+
+### 6. Corrective Waypoints
+```json
+[
+  {
+    "phase": "S10",
+    "joints": [
+      2.256369,
+      -0.57,
+      0.57,
+      0.57,
+      -0.57,
+      -0.57
+    ],
+    "gripper": 1.0,
+    "velocity_scaling": 0.8,
+    "note": "Corrective waypoint to ensure tool0 XY ≈ screw XY and Z ≈ approach_z at t150–163"
+  },
+  {
+    "phase": "S11",
+    "joints": [
+      2.256369,
+      -0.57,
+      0.57,
+      0.57,
+      -0.57,
+      -0.57
+    ],
+    "gripper": 1.0,
+    "velocity_scaling": 0.8,
+    "note": "Corrective waypoint to maintain wrist_3 ≈ wrist3_safe_min at t163–177"
+  }
+]
+```
+
+All invariants satisfied — no correction needed.

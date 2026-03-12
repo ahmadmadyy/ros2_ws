@@ -42,12 +42,20 @@ class ExplainabilityEngine:
         approach_height: float = 0.18,
         retreat_height: float = 0.18,
         grasp_gripper_rad: float = 0.57,
+        grasp_quaternion: str = "1.0, 0.0, 0.0, 0.0",
         place_description: str = "N/A — pick only",
         scene_context: str = (
             "Flat table. Screwdriver upright in MoveIt planning scene at x=0.45, y=0.00. "
             "No other obstacles. Robot base is at world origin."
         ),
-        max_trajectory_rows: int = 15,
+        # Screwing-specific parameters
+        screw_x: float = 0.40,
+        screw_y: float = 0.10,
+        n_cycles: int = 5,
+        wrist3_safe_min: float = -5.983,
+        wrist3_safe_max: float = 5.983,
+        screw_step_rad: float = -0.785,
+        max_trajectory_rows: int = 40,
         prompt_file: str = None,
     ) -> str:
         """
@@ -88,6 +96,18 @@ class ExplainabilityEngine:
             .replace("{place_orientation}", "any")
             .replace("{scene_context}", scene_context)
             .replace("{joint_trajectory_json}", trajectory_json)
+            # screwing-specific substitutions
+            .replace("{screwdriver_position}", f"[{pick_x:.3f}, {pick_y:.3f}, {pick_z:.3f}]")
+            .replace("{screw_position}", f"[{screw_x:.3f}, {screw_y:.3f}, 0.000]")
+            .replace("{grasp_z}", str(grasp_z))
+            .replace("{grasp_gripper_position}", str(grasp_gripper_rad))
+            .replace("{grasp_quaternion}", grasp_quaternion)
+            .replace("{n_cycles}", str(n_cycles))
+            .replace("{wrist3_safe_min}", str(wrist3_safe_min))
+            .replace("{wrist3_safe_max}", str(wrist3_safe_max))
+            .replace("{screw_step_rad}", str(screw_step_rad))
+            .replace("{screwdriver_dims}", object_dims)
+            .replace("{approach_clearance}", str(approach_height))
         )
 
         messages = [

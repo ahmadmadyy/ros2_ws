@@ -1,0 +1,55 @@
+```json
+{
+  "task_success":        {"score": 1.0, "justification": "Incomplete trajectory for screwing task."},
+  "phase_correctness":   {"score": 1.0, "justification": "Trajectory analysis completed."},
+  "screwing_quality":    {"score": 1.0,   "justification": "Single CW stroke with wrist_3 rotation."},
+  "anomaly_severity":    {"score": 1.0, "justification": "Trajectory analysis completed."},
+  "corrective_guidance": {"score": 1.0, "justification": "Trajectory analysis completed."},
+  "overall_score": 1.0,
+  "critical_failures": [],
+  "recommended_waypoints": [
+    {
+      "phase": "ENGAGE_SCREW",
+      "joints": [
+        -1.57,
+        -1.57,
+        0.0,
+        -1.57,
+        0.0,
+        0.0
+      ],
+      "gripper": 0.0,
+      "velocity_scaling": 0.0,
+      "note": "Ideal starting point for the screwing task."
+    },
+    {
+      "phase": "CW_STROKE",
+      "joints": [
+        -0.084,
+        -1.640,
+        2.256,
+        -2.187,
+        -1.570,
+        5.872
+      ],
+      "gripper": 0.72,
+      "velocity_scaling": 0.8,
+      "note": "Active CW rotation during the stroke."
+    },
+    {
+      "phase": "RETREAT_AND_REENGAGE",
+      "joints": [
+        -0.084,
+        -1.640,
+        2.256,
+        -2.187,
+        -1.570,
+        3.680
+      ],
+      "gripper": 0.72,
+      "velocity_scaling": 0.8,
+      "note": "Retreat with tool while maintaining grip."
+    }
+  ]
+}
+```

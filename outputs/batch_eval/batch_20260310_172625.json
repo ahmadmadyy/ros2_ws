@@ -1,0 +1,282 @@
+[
+  {
+    "run": "2B-differential-checklist",
+    "cosmos_model": "nvidia/Cosmos-Reason2-2B",
+    "cosmos_prompt": "cosmos_screwing_differential.txt",
+    "eval_prompt": "eval_screwing_checklist.txt",
+    "elapsed_sec": 72.9,
+    "trace_id": "09135dc9",
+    "trace_label": "continuous_screw_topdown",
+    "cosmos_analysis": "```json\n{\n  \"task_success\":        {\"score\": 1.0, \"justification\": \"Incomplete trajectory for screwing task.\"},\n  \"phase_correctness\":   {\"score\": 1.0, \"justification\": \"Trajectory analysis completed.\"},\n  \"screwing_quality\":    {\"score\": 1.0,   \"justification\": \"Single CW stroke with wrist_3 rotation.\"},\n  \"anomaly_severity\":    {\"score\": 1.0, \"justification\": \"Trajectory analysis completed.\"},\n  \"corrective_guidance\": {\"score\": 1.0, \"justification\": \"Trajectory analysis completed.\"},\n  \"overall_score\": 1.0,\n  \"critical_failures\": [],\n  \"recommended_waypoints\": [\n    {\n      \"phase\": \"ENGAGE_SCREW\",\n      \"joints\": [\n        -1.57,\n        -1.57,\n        0.0,\n        -1.57,\n        0.0,\n        0.0\n      ],\n      \"gripper\": 0.0,\n      \"velocity_scaling\": 0.0,\n      \"note\": \"Ideal starting point for the screwing task.\"\n    },\n    {\n      \"phase\": \"CW_STROKE\",\n      \"joints\": [\n        -0.084,\n        -1.640,\n        2.256,\n        -2.187,\n        -1.570,\n        5.872\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 0.8,\n      \"note\": \"Active CW rotation during the stroke.\"\n    },\n    {\n      \"phase\": \"RETREAT_AND_REENGAGE\",\n      \"joints\": [\n        -0.084,\n        -1.640,\n        2.256,\n        -2.187,\n        -1.570,\n        3.680\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 0.8,\n      \"note\": \"Retreat with tool while maintaining grip.\"\n    }\n  ]\n}\n```",
+    "overall_score": 0.643,
+    "task_outcome": "partial",
+    "spatial_awareness": null,
+    "plan_coherence": null,
+    "safety_awareness": null,
+    "goal_achievement": null,
+    "anomaly_detection": null,
+    "corrective_feedback": null,
+    "consistency": null,
+    "critical_failures": [
+      "T4",
+      "R1",
+      "R4"
+    ],
+    "suggestions": [],
+    "parse_error": null,
+    "raw_result": {
+      "trajectory_checks": {
+        "T1": {
+          "result": "PASS",
+          "justification": "Gripper was open before descending toward the screwdriver."
+        },
+        "T2": {
+          "result": "PASS",
+          "justification": "Gripper closed at a timestep consistent with being at grasp height."
+        },
+        "T3": {
+          "result": "PASS",
+          "justification": "Gripper remained closed from grasp through the end of screwing."
+        },
+        "T4": {
+          "result": "FAIL",
+          "justification": "The robot did not move upward before transitioning laterally to the screw location."
+        },
+        "T5": {
+          "result": "PASS",
+          "justification": "Before the first CW wrist rotation, there exists a timestep sequence where the arm moved downward while gripper stayed closed."
+        },
+        "T6": {
+          "result": "PASS",
+          "justification": "The joint configuration at first engagement is kinematically consistent with the screw target position."
+        },
+        "T7": {
+          "result": "PASS",
+          "justification": "During every CW rotation segment, wrist_3 values are monotonically decreasing."
+        },
+        "T8": {
+          "result": "PASS",
+          "justification": "During every CW rotation segment, joints 1-5 each changed by less than 0.05 rad total."
+        },
+        "T9": {
+          "result": "FAIL",
+          "justification": "Wrist_3 exceeded 5.983 rad at some timestep."
+        },
+        "T10": {
+          "result": "PASS",
+          "justification": "The total number of distinct CW segments equals 5."
+        },
+        "T11": {
+          "result": "PASS",
+          "justification": "Total CW rotation across all strokes exceeds 720\u00b0 (at least 2 full turns net)."
+        },
+        "T12": {
+          "result": "FAIL",
+          "justification": "No CCW reposition occurred while the arm was at engage height."
+        },
+        "T13": {
+          "result": "PASS",
+          "justification": "Every CCW rotation segment is preceded by a lift."
+        },
+        "T14": {
+          "result": "FAIL",
+          "justification": "After every CCW reposition (except the last), the arm did not descend back to engage height before the next CW segment."
+        },
+        "T15": {
+          "result": "PASS",
+          "justification": "After the last screwing cycle, the robot returned to a configuration approximately matching home joints."
+        }
+      },
+      "reasoning_checks": {
+        "R1": {
+          "result": "FAIL",
+          "justification": "Cosmos did not correctly identify the pick phase."
+        },
+        "R2": {
+          "result": "PASS",
+          "justification": "Cosmos correctly identified the number of screwing cycles."
+        },
+        "R3": {
+          "result": "PASS",
+          "justification": "Cosmos correctly identified the CW/CCW pattern within each cycle."
+        },
+        "R4": {
+          "result": "FAIL",
+          "justification": "Cosmos did not correctly identify the lift-reposition-reengage pattern."
+        },
+        "R5": {
+          "result": "PASS",
+          "justification": "Cosmos reported total CW rotation within \u00b150\u00b0 of the actual trajectory value."
+        },
+        "R6": {
+          "result": "PASS",
+          "justification": "Cosmos reported the correct number of completed cycles."
+        },
+        "R7": {
+          "result": "FAIL",
+          "justification": "Cosmos did not correctly identify the wrist_3 start and end values for at least 3 screwing strokes."
+        },
+        "R8": {
+          "result": "FAIL",
+          "justification": "Cosmos did not detect an anomaly in the trajectory."
+        },
+        "R9": {
+          "result": "PASS",
+          "justification": "Cosmos did not claim a failure that doesn't exist in the trajectory."
+        },
+        "R10": {
+          "result": "FAIL",
+          "justification": "If corrections were suggested, they are not kinematically feasible."
+        },
+        "R11": {
+          "result": "PASS",
+          "justification": "Cosmos correctly stated that CW rotation drives the screw and CCW is repositioning only."
+        },
+        "R12": {
+          "result": "PASS",
+          "justification": "Cosmos correctly explained why the robot must lift before CCW rotation."
+        },
+        "R13": {
+          "result": "FAIL",
+          "justification": "Cosmos did not correctly identify that the finite wrist range necessitates the cyclic strategy."
+        }
+      },
+      "trajectory_score": "/ 50%",
+      "reasoning_score": "/ 30%",
+      "critical_failures": [
+        "T4",
+        "R1",
+        "R4"
+      ],
+      "summary": ""
+    }
+  },
+  {
+    "run": "2B-kinematic-pairwise",
+    "cosmos_model": "nvidia/Cosmos-Reason2-2B",
+    "cosmos_prompt": "cosmos_screwing_kinematic.txt",
+    "eval_prompt": "eval_screwing_pairwise.txt",
+    "elapsed_sec": 37.1,
+    "trace_id": "09135dc9",
+    "trace_label": "continuous_screw_topdown",
+    "cosmos_analysis": "```json\n{\n  \"task_success\": {\n    \"score\": 3.0,\n    \"justification\": \"The screwdriver maintains a consistent orientation relative to the world \u2212z axis throughout the task, with the tool-tip z-coordinate remaining constant at approximately 0.26 m. However, the tool-tip path deviates from the screw's center, especially during the final phases, indicating a potential failure in aligning the tool-tip precisely with the screw.\"\n  },\n  \"phase_correctness\": {\n    \"score\": 3.0,\n    \"justification\": \"During the initial engagement phase, the tool-tip approaches the screw within acceptable XY tolerances but fails to maintain optimal alignment. The transit phase satisfies clearance requirements, and the final phases demonstrate a CW rotation but lack precise re-engagement with the screw.\"\n  },\n  \"screwing_quality\": {\n    \"score\": 3.0,\n    \"justification\": \"The CW rotation is executed with minimal deviation from the top-down orientation, suggesting effective tool-axis alignment. However, the tool-tip's XY position drifts from the screw's center during the final stroke, compromising the precision of the screwing action.\"\n  },\n  \"anomaly_severity\": {\n    \"score\": 1.0,\n    \"justification\": \"Critical failure: the tool-tip fails to remain aligned with the screw's center during the final stroke, resulting in inaccurate screw engagement.\"\n  },\n  \"corrective_guidance\": {\n    \"score\": 3.0,\n    \"justification\": \"Corrective action: reposition the tool-tip to ensure it stays centered on the screw during the final stroke. Adjust the wrist_3 joint angles to improve alignment accuracy.\"\n  },\n  \"overall_score\": 3.0,\n  \"critical_failures\": [\n    \"The tool-tip fails to maintain optimal alignment with the screw during the final stroke.\"\n  ],\n  \"recommended_waypoints\": [\n    {\n      \"phase\": \"ENGAGE_SCREW\",\n      \"joints\": [\n        -0.084,\n        -1.640,\n        2.256,\n        -2.187,\n        -1.570,\n        -0.299\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Align the tool-tip precisely with the screw's center to ensure accurate engagement.\"\n    },\n    {\n      \"phase\": \"REPOSITION_CCW\",\n      \"joints\": [\n        -0.084,\n        -1.640,\n        2.256,\n        -2.187,\n        -1.570,\n        -2.379\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Ensure the tool-tip clears the screw head before re-engaging.\"\n    },\n    {\n      \"phase\": \"RE_ENGAGE_SCREW\",\n      \"joints\": [\n        -0.084,\n        -1.640,\n        2.256,\n        -2.187,\n        -1.570,\n        -4.074\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Verify the tool-tip is centered on the screw and maintains a constant z-height for accurate screwing.\"\n    }\n  ]\n}\n```",
+    "overall_score": 0.75,
+    "task_outcome": "success",
+    "spatial_awareness": null,
+    "plan_coherence": null,
+    "safety_awareness": null,
+    "goal_achievement": null,
+    "anomaly_detection": null,
+    "corrective_feedback": null,
+    "consistency": null,
+    "critical_failures": [],
+    "suggestions": [],
+    "parse_error": null,
+    "raw_result": {
+      "phase_segmentation": {
+        "verdict": "BETTER",
+        "cosmos_phases_found": 5,
+        "reference_phases_found": 4,
+        "matching_phases": 3,
+        "evidence": "Cosmos correctly identified the initial engagement phase and the final screwing cycle, while the reference missed one of the transit phases."
+      },
+      "failure_detection": {
+        "verdict": "BETTER",
+        "true_positives": 2,
+        "false_negatives": 1,
+        "false_positives": 0,
+        "missed_issues": [
+          "critical failure: tool-tip fails to maintain optimal alignment with the screw during the final stroke"
+        ],
+        "evidence": "Cosmos correctly identified two critical failures (tool-tip misalignment and lack of precise re-engagement) that the reference missed."
+      },
+      "quantitative_accuracy": {
+        "verdict": "WORSE",
+        "rotation_error_deg": 5.2,
+        "cycle_count_match": false,
+        "evidence": "Cosmos underestimated the total CW rotation by 5.2 degrees and incorrectly counted the number of screwing cycles."
+      },
+      "corrective_guidance": {
+        "verdict": "BETTER",
+        "feasible": true,
+        "would_fix_issue": true,
+        "evidence": "Cosmos provided feasible corrective guidance that would fix the identified issues (reposition the tool-tip to ensure optimal alignment and adjust wrist_3 joint angles)."
+      },
+      "reasoning_depth": {
+        "verdict": "BETTER",
+        "evidence": "Cosmos demonstrated a deeper understanding of the screwing mechanics, explaining why certain issues occurred and providing targeted corrective guidance."
+      },
+      "overall_verdict": "BETTER",
+      "win_count": {
+        "cosmos": 3,
+        "reference": 1,
+        "tie": 0
+      },
+      "summary": "Overall, Cosmos outperformed the reference in phase segmentation accuracy, failure detection recall, and reasoning depth. While it struggled with quantitative accuracy, its corrective guidance was more feasible and targeted."
+    }
+  },
+  {
+    "run": "2B-phases-rubric",
+    "cosmos_model": "nvidia/Cosmos-Reason2-2B",
+    "cosmos_prompt": "cosmos_screwing_phases.txt",
+    "eval_prompt": "eval_screwing_rubric.txt",
+    "elapsed_sec": 28.4,
+    "trace_id": "09135dc9",
+    "trace_label": "continuous_screw_topdown",
+    "cosmos_analysis": "```json\n{\n  \"task_success\": {\n    \"score\": 2.0,\n    \"justification\": \"The robot successfully picked up the screwdriver and attempted five screwing cycles, but failed to re-engage properly on the fifth cycle. The final cycle skipped the necessary descent to the screw, resulting in incomplete engagement.\"\n  },\n  \"phase_correctness\": {\n    \"score\": 2.0,\n    \"justification\": \"Most phases were executed correctly, including the initial approach, grasp, and retreat. However, the fifth cycle skipped the descent to the screw, violating the prescribed protocol.\"\n  },\n  \"screwing_quality\": {\n    \"score\": 2.0,\n    \"justification\": \"Five cycles were attempted, but the fifth lacked proper screw engagement due to skipping the descent phase. Efficiency was compromised by unnecessary repositioning.\"\n  },\n  \"anomaly_severity\": {\n    \"score\": 2.0,\n    \"justification\": \"The primary anomaly was skipping the descent during the fifth cycle, which invalidated the task completion.\"\n  },\n  \"corrective_guidance\": {\n    \"score\": 2.0,\n    \"justification\": \"Ensure the descent phase is completed before each cycle to guarantee proper screw engagement. Verify wrist_3 stays within bounds during all cycles.\"\n  },\n  \"overall_score\": 2.0,\n  \"critical_failures\": [\n    \"Skipped descent during fifth cycle\",\n    \"Failed to re-engage on the fifth cycle\"\n  ],\n  \"recommended_waypoints\": [\n    {\n      \"phase\": \"Approach screwdriver\",\n      \"joints\": [\n        -1.57,\n        -1.57,\n        0.0,\n        -1.57,\n        0.0,\n        0.0\n      ],\n      \"gripper\": 0.0,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Ideal approach ensures correct positioning and alignment.\"\n    },\n    {\n      \"phase\": \"Descend to grasp\",\n      \"joints\": [\n        -1.57,\n        -1.57,\n        0.0,\n        -1.57,\n        0.0,\n        0.0\n      ],\n      \"gripper\": 0.0,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Critical descent ensures precise tool placement.\"\n    },\n    {\n      \"phase\": \"Engage screw\",\n      \"joints\": [\n        -1.57,\n        -1.57,\n        0.0,\n        -1.57,\n        0.0,\n        0.0\n      ],\n      \"gripper\": 0.72,\n      \"velocity_scaling\": 1.0,\n      \"note\": \"Required to initiate the screwing action.\"\n    }\n  ]\n}\n```",
+    "overall_score": 0.52,
+    "task_outcome": "partial",
+    "spatial_awareness": null,
+    "plan_coherence": null,
+    "safety_awareness": null,
+    "goal_achievement": null,
+    "anomaly_detection": null,
+    "corrective_feedback": null,
+    "consistency": null,
+    "critical_failures": [
+      "Skipped descent during fifth cycle",
+      "Failed to re-engage on the fifth cycle"
+    ],
+    "suggestions": [
+      "Improve phase correctness by ensuring proper descent before each cycle"
+    ],
+    "parse_error": null,
+    "raw_result": {
+      "task_success": {
+        "score": 2,
+        "justification": "The robot successfully picked up the screwdriver and attempted five screwing cycles, but failed to re-engage properly on the fifth cycle."
+      },
+      "phase_correctness": {
+        "score": 3,
+        "justification": "Most phases were executed correctly, including the initial approach, grasp, and retreat. However, the fifth cycle skipped the descent phase, violating the prescribed protocol."
+      },
+      "screwing_quality": {
+        "score": 2,
+        "justification": "Five cycles were attempted, but the fifth lacked proper screw engagement due to skipping the descent phase. Efficiency was compromised by unnecessary repositioning."
+      },
+      "anomaly_severity": {
+        "score": 4,
+        "justification": "The primary anomaly was skipping the descent during the fifth cycle, which invalidated the task completion."
+      },
+      "corrective_guidance": {
+        "score": 3,
+        "justification": "Ensure the descent phase is completed before each cycle to guarantee proper screw engagement. Verify wrist_3 stays within bounds during all cycles."
+      },
+      "critical_failures": [
+        "Skipped descent during fifth cycle",
+        "Failed to re-engage on the fifth cycle"
+      ],
+      "suggestions": [
+        "Improve phase correctness by ensuring proper descent before each cycle"
+      ]
+    }
+  },
+  {
+    "run": "2B-statemachine-temporal",
+    "cosmos_model": "nvidia/Cosmos-Reason2-2B",
+    "cosmos_prompt": "cosmos_screwing_statemachine.txt",
+    "eval_prompt": "eval_screwing_temporal.txt",
+    "elapsed_sec": 364.0,
+    "error": "Server error '500 Internal Server Error' for url 'http://localhost:8080/api/v1/analyze/09135dc9'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+  }
+]

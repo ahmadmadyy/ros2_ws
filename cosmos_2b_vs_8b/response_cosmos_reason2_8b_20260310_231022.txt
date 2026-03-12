@@ -1,0 +1,34 @@
+```json
+{
+  "trace_id": "6e548131",
+  "overall_verdict": "CONDITIONAL_PASS",
+  "quality_score": 6.5,
+  "total_phases_identified": 8,
+  "reset_cycles_detected": 5,
+  "screwing_efficiency_pct": 79.6,
+  "gripper_events": [
+    {
+      "time_sec": 4.55,
+      "event": "CLOSE",
+      "joint_value": 0.57
+    }
+  ],
+  "critical_anomalies": [
+    "Wrist_3 velocity spikes to +1.5675 rad/s during reset at t=153.57s, indicating aggressive motion",
+    "Gripper remains closed at final state (t=205.27s), suggesting tool was never released",
+    "Screwing activity consists of burst-and-pause micro-patterns, indicating suboptimal control"
+  ],
+  "warnings": [
+    "Reset cycles cost 41.8 seconds (20% of total time), which is inefficient",
+    "Screwing efficiency is only 79.6%, meaning 20.4% of time was spent resetting",
+    "Wrist_3 accumulated up to -5.0128 rad, nearing joint limits, risking mechanical stress"
+  ],
+  "recommended_improvements": [
+    "Implement a tool release mechanism to open the gripper at the end",
+    "Optimize reset cycles to reduce duration and frequency",
+    "Use continuous screwing motion instead of burst-and-pause patterns",
+    "Monitor wrist_3 rotation to avoid joint limits and reduce reset triggers"
+  ],
+  "understood_task": true
+}
+```

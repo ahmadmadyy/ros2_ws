@@ -1,0 +1,196 @@
+{
+  "event_alignment": [
+    {
+      "event": "S0:HOME",
+      "cosmos_claim": "[0.0\u201312.2] S0:HOME",
+      "actual": "t=0.0, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S1:GRIPPER_OPEN",
+      "cosmos_claim": "[13.7\u201326.9] S1:GRIPPER_OPEN",
+      "actual": "t=13.7202, gripper_state = 0.0 (open)",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S2:APPROACH_SCREWDRIVER",
+      "cosmos_claim": "[26.9\u201340.3] S2:APPROACH_SCREWDRIVER",
+      "actual": "t=26.9502, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S3:DESCEND_TO_GRASP",
+      "cosmos_claim": "[40.3\u201354.1] S3:DESCEND_TO_GRASP",
+      "actual": "t=40.37, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S4:GRASP",
+      "cosmos_claim": "[54.1\u201367.7] S4:GRASP",
+      "actual": "t=54.1501, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S5:RETRACT",
+      "cosmos_claim": "[67.7\u201380.9] S5:RETRACT",
+      "actual": "t=67.7002, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S6:MOVE_ABOVE_SCREW",
+      "cosmos_claim": "[80.9\u201394.2] S6:MOVE_ABOVE_SCREW",
+      "actual": "t=80.9, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S7:ENGAGE_SCREW",
+      "cosmos_claim": "[94.2\u2013108.1] S7:ENGAGE_SCREW",
+      "actual": "t=94.2501, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S8:CW_ROTATE",
+      "cosmos_claim": "[108.1\u2013122.6] S8:CW_ROTATE",
+      "actual": "t=108.1301, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S9:LIFT_DISENGAGE",
+      "cosmos_claim": "[122.6\u2013136.2] S9:LIFT_DISENGAGE",
+      "actual": "t=122.6301, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S10:CCW_REPOSITION",
+      "cosmos_claim": "[136.2\u2013150.1] S10:CCW_REPOSITION",
+      "actual": "t=136.26, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S11:RE_ENGAGE",
+      "cosmos_claim": "[150.1\u2013163.8] S11:RE_ENGAGE",
+      "actual": "t=150.1601, joints = { ... }",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    }
+  ],
+  "order_checks": [
+    {
+      "pair": "S0 before S1",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S1 before S2",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S2 before S3",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S3 before S4",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S4 before S5",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S5 before S6",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S6 before S7",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S7 before S8",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S8 before S9",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S9 before S10",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S10 before S11",
+      "result": "CORRECT"
+    }
+  ],
+  "coverage": {
+    "total_actual_events": 11,
+    "cosmos_addressed": 11,
+    "coverage_pct": 100.0,
+    "missing_events": []
+  },
+  "hallucination": {
+    "total_cosmos_claims": 12,
+    "hallucinated_claims": 0,
+    "hallucination_rate_pct": 0.0,
+    "hallucinated_details": []
+  },
+  "internal_consistency": [
+    {
+      "check": "Phase durations sum to task duration",
+      "result": "CONSISTENT"
+    },
+    {
+      "check": "Cycle durations are roughly consistent",
+      "result": "CONSISTENT"
+    },
+    {
+      "check": "Wrist_3 start/end values per cycle chain correctly",
+      "result": "CONSISTENT"
+    }
+  ],
+  "temporal_scores": {
+    "boundary_accuracy": 0.9,
+    "value_accuracy": 1.0,
+    "order_accuracy": 1.0,
+    "coverage": 100.0,
+    "hallucination_rate": 0.0,
+    "internal_consistency": 1.0
+  },
+  "overall_temporal_score": 0.95,
+  "critical_temporal_failures": [],
+  "summary": "",
+  "overall_score": 0.0
+}

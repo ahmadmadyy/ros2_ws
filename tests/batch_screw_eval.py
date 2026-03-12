@@ -81,10 +81,17 @@ TASK_CONTEXT = dict(
     pick_z=0.09,
     grasp_z=0.26,
     grasp_gripper_rad=0.57,
+    grasp_quaternion="1.0, 0.0, 0.0, 0.0",
     object_dims="cylinder: diameter 24 mm, height 180 mm (upright)",
     approach_height=0.18,
     retreat_height=0.20,
     place_description="screw at x=0.40, y=0.10",
+    screw_x=0.40,
+    screw_y=0.10,
+    n_cycles=5,
+    wrist3_safe_min=-5.983,
+    wrist3_safe_max=5.983,
+    screw_step_rad=-0.785,
     scene_context=(
         "Flat table. Screwdriver upright at x=0.45, y=0.00. "
         "Screw target at x=0.40, y=0.10. No other obstacles. "

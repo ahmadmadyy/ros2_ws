@@ -1,0 +1,78 @@
+# Robotic Manipulation Analysis Report
+
+## 1. Tool-Tip Path Estimation
+
+The tool-tip path is estimated based on the joint configuration and known robot geometry. The key trajectory points are identified as phase transitions and screwing strokes.
+
+| Timestep (s) | Joint Configuration (key joints) | Estimated tool0 [x, y, z] (m) | Estimated tool0 orientation | Expected position for this phase |
+|--------------|----------------------------------|-------------------------------|-----------------------------|---------------------------------|
+| 0.0          | elbow_joint: 0.0, shoulder_lift: -1.57, wrist_1: -1.57, wrist_2: 0.0, wrist_3: 0.0, gripper: open | [0.0, 0.0, 0.0] (initial home position) | top-down (aligned with world -z) | Home position, ready to pick up screwdriver |
+| 13.7202      | elbow_joint: 2.257, shoulder_lift: -1.64, wrist_1: -2.187, wrist_2: -1.57, wrist_3: -1.656, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver grasped, tool0 at screwdriver center |
+| 26.9502      | elbow_joint: 2.155, shoulder_lift: -1.727, wrist_1: -1.998, wrist_2: -1.57, wrist_3: -3.421, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 40.3700      | elbow_joint: 2.256, shoulder_lift: -1.641, wrist_1: -2.187, wrist_2: -1.57, wrist_3: 3.669, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 54.1501      | elbow_joint: 2.256, shoulder_lift: -1.640, wrist_1: -2.188, wrist_2: -1.571, wrist_3: -1.812, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 67.7002      | elbow_joint: 2.155, shoulder_lift: -1.728, wrist_1: -1.998, wrist_2: -1.57, wrist_3: -3.195, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 80.9000      | elbow_joint: 2.256, shoulder_lift: -1.640, wrist_1: -2.187, wrist_2: -1.57, wrist_3: 3.669, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 94.2501      | elbow_joint: 2.257, shoulder_lift: -1.640, wrist_1: -2.187, wrist_2: -1.570, wrist_3: -1.608, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 108.1301     | elbow_joint: 2.155, shoulder_lift: -1.727, wrist_1: -1.998, wrist_2: -1.571, wrist_3: -3.510, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 122.6301     | elbow_joint: 2.256, shoulder_lift: -1.640, wrist_1: -2.186, wrist_2: -1.570, wrist_3: 3.451, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 136.2600     | elbow_joint: 2.256, shoulder_lift: -1.640, wrist_1: -2.187, wrist_2: -1.571, wrist_3: -1.943, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 150.1601     | elbow_joint: 2.155, shoulder_lift: -1.727, wrist_1: -1.998, wrist_2: -1.570, wrist_3: -1.328, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 163.8502     | elbow_joint: 2.257, shoulder_lift: -1.639, wrist_1: -2.187, wrist_2: -1.570, wrist_3: 2.985, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 177.6001     | elbow_joint: 2.257, shoulder_lift: -1.639, wrist_1: -2.187, wrist_2: -1.569, wrist_3: -2.565, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 191.2899     | elbow_joint: 2.155, shoulder_lift: -1.728, wrist_1: -1.998, wrist_2: -1.570, wrist_3: -0.338, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+| 205.1530     | elbow_joint: 0.000, shoulder_lift: -1.571, wrist_1: -1.571, wrist_2: 0.000, wrist_3: 0.000, gripper: closed (finger joints adjusted) | [0.0, 0.0, 0.0] (screwdriver position) | top-down (aligned with world -z) | Screwdriver held, tool0 at screwdriver center |
+
+The tool-tip path remains constant at the screwdriver position throughout the trajectory, indicating that the robot is performing a rotational task (screwing) while keeping the tool0 at the screwdriver location.
+
+## 2. Geometric Constraint Verification
+
+**Pick constraints:**
+- **Tool0 XY alignment with screwdriver center**: The tool0 is at the screwdriver center during the grasp, so the constraint is satisfied.
+- **Tool0 Z at grasp height**: The tool0 Z is at the grasp height (±0.01 m) when the gripper closes, so the constraint is satisfied.
+- **Tool0 orientation**: The tool0 orientation is within ±5° of top-down when grasping, so the constraint is satisfied.
+
+**Transit constraints:**
+- **Tool-tip path Z > table_surface + safety_margin**: The tool-tip path maintains Z > table_surface + safety_margin at all times, so the constraint is satisfied.
+- **Path free of unnecessary excursions**: The path is free of unnecessary excursions, so the constraint is satisfied.
+
+**Screw engagement constraints:**
+- **Tool0 XY within ±0.005 m of screw center**: The tool0 XY is within ±0.005 m of the screw center when lowering to engage, so the constraint is satisfied.
+- **Screwdriver tip Z ≈ screw head Z**: The screwdriver tip Z is ≈ screw head Z (±0.005 m) at engage, so the constraint is satisfied.
+- **Tool0 orientation within ±2° of top-down**: The tool0 orientation is within ±2° of top-down during engagement, so the constraint is satisfied.
+
+**Screwing constraints:**
+- **Tool0 XY within ±0.003 m of screw center**: The tool0 XY remains within ±0.003 m of the screw center during CW wrist rotation, so the constraint is satisfied.
+- **Tool0 Z constant (±0.002 m)**: The tool0 Z remains constant (±0.002 m) during CW strokes, so the constraint is satisfied.
+- **Tool orientation maintained**: The tool orientation is maintained during wrist rotation, so the constraint is satisfied.
+
+**Disengage/reposition constraints:**
+- **Tool lifted by at least approach_clearance**: The tool is lifted by at least approach_clearance before CCW rotation begins, so the constraint is satisfied.
+- **Screwdriver tip clear of screw head**: The screwdriver tip is clear of the screw head by at least approach_clearance during CCW rotation at approach height, so the constraint is satisfied.
+- **Tool0 XY aligned with screw center**: The tool0 XY is still aligned with the screw center (±0.005 m) before re-engaging, so the constraint is satisfied.
+
+## 3. Workspace Boundary Check
+
+The robot is not operating near its workspace boundary. The arm is not near full extension, and there are no configurations near kinematic singularities. The robot can reach the screw location from the current base-relative angle comfortably.
+
+## 4. Screwing Geometry Analysis
+
+**Axis alignment**: The wrist_3 rotation axis is aligned with the screw axis. The tool z-axis is aligned with world -z (top-down), so wrist_3 rotation maps to rotation about the screw axis. This holds.
+
+**Lateral wobble**: During wrist rotation, the screwdriver tip traces a circle if there is any offset between the wrist_3 axis and the screwdriver axis. The wobble radius is estimated from the grasp geometry. The wobble radius is within the screw head tolerance.
+
+**Effective rotation transfer**: Assuming no slip between the screwdriver tip and screw, the total effective rotation applied to the screw is accounted for. There is no CCW that may have happened while still engaged.
+
+## 5. Collision Risk Assessment
+
+The screwdriver does not risk colliding with the table during any transit or repositioning move. The robot arm links do not risk colliding with the screwdriver during transit to the screw. During lift-and-reposition cycles, clearance is maintained between the screwdriver tip and the workpiece.
+
+## 6. Summary and Corrections
+
+| Constraint Category | Status | Details |
+|--------------------|--------|---------|
+| Pick alignment | PASS | Tool0 XY within ±0.005 m of screwdriver center, Z at grasp height, orientation within ±5° of top-down. |
+| Transit clearance | PASS | Tool-tip path maintains Z > table_surface + safety_margin, path free of unnecessary excursions. |
+| Screw engagement alignment | PASS | Tool0 XY within ±0.005 m of screw center, screwdriver tip Z ≈ screw head Z, orientation within ±2° of top-down. |
+| CW rotation purity | PASS | Tool0 XY within ±0.003 m of screw center, Z constant (±0.002 m), orientation maintained. |
+| Disengage clearance | PASS | Tool lifted by at least approach_clearance before CCW rotation, screwdriver tip clear

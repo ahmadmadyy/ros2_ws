@@ -1,0 +1,177 @@
+{
+  "event_alignment": [
+    {
+      "event": "S0:HOME",
+      "cosmos_claim": "[t0] S0:HOME",
+      "actual": "All joints are at home configuration.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S1:GRIPPER_OPEN",
+      "cosmos_claim": "[t13.7202] S1:GRIPPER_OPEN",
+      "actual": "Gripper is fully open.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S2:APPROACH_SCREWDRIVER",
+      "cosmos_claim": "[t13.7202] S2:APPROACH_SCREWDRIVER",
+      "actual": "Tool0 is approaching the screwdriver's position.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S3:DESCEND_TO_GRASP",
+      "cosmos_claim": "[t26.9502] S3:DESCEND_TO_GRASP",
+      "actual": "Tool0 is descending to the grasp height.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S4:GRASP",
+      "cosmos_claim": "[t40.37] S4:GRASP",
+      "actual": "Tool0 is at the grasp height with the gripper closed.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S5:RETREAT",
+      "cosmos_claim": "[t54.1501] S5:RETREAT",
+      "actual": "Tool0 is retreating with the gripper closed.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S6:MOVE_ABOVE_SCREW",
+      "cosmos_claim": "[t67.7002] S6:MOVE_ABOVE_SCREW",
+      "actual": "Tool0 is moving above the screw target.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S7:ENGAGE_SCREW",
+      "cosmos_claim": "[t80.9] S7:ENGAGE_SCREW",
+      "actual": "Tool0 is engaged with the screw.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S8: CW_ROTATE",
+      "cosmos_claim": "[t94.2501] S8: CW_ROTATE",
+      "actual": "Wrist_3 is rotating clockwise within the safe range.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S9:LIFT_DISENGAGE",
+      "cosmos_claim": "[t108.1301] S9:LIFT_DISENGAGE",
+      "actual": "Tool0 is lifted and disengaged.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S10:CCW_REPOSITION",
+      "cosmos_claim": "[t122.6301] S10:CCW_REPOSITION",
+      "actual": "Tool0 is repositioned with the gripper closed.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S11:RE_ENGAGE",
+      "cosmos_claim": "[t136.26] S11:RE_ENGAGE",
+      "actual": "Tool0 is re-engaged with the screw.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    },
+    {
+      "event": "S12:FINAL_LIFT",
+      "cosmos_claim": "[t205.153] S12:FINAL_LIFT",
+      "actual": "Tool0 is lifted after the final cycle.",
+      "boundary_alignment": "EXACT",
+      "value_alignment": "N/A",
+      "boundary_error": 0,
+      "value_error": 0
+    }
+  ],
+  "order_checks": [
+    {
+      "pair": "S4:GRASP before S5:RETREAT",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S8: CW_ROTATE before S9:LIFT_DISENGAGE",
+      "result": "CORRECT"
+    },
+    {
+      "pair": "S10:CCW_REPOSITION before S11:RE_ENGAGE",
+      "result": "CORRECT"
+    }
+  ],
+  "coverage": {
+    "total_actual_events": 12,
+    "cosmos_addressed": 12,
+    "coverage_pct": 100.0,
+    "missing_events": []
+  },
+  "hallucination": {
+    "total_cosmos_claims": 13,
+    "hallucinated_claims": 1,
+    "hallucination_rate_pct": 7.69,
+    "hallucinated_details": [
+      "S13:RETURN_HOME"
+    ]
+  },
+  "internal_consistency": [
+    {
+      "check": "Phase durations sum to total task duration",
+      "result": "CONSISTENT"
+    },
+    {
+      "check": "Cycle durations are roughly consistent",
+      "result": "CONSISTENT"
+    },
+    {
+      "check": "Wrist_3 start/end values per cycle chain correctly",
+      "result": "CONSISTENT"
+    }
+  ],
+  "temporal_scores": {
+    "boundary_accuracy": "95.0%",
+    "value_accuracy": "N/A",
+    "order_accuracy": "100.0%",
+    "coverage": "100.0%",
+    "hallucination_rate": "7.69%",
+    "internal_consistency": "100.0%"
+  },
+  "overall_temporal_score": 0.95,
+  "critical_temporal_failures": [
+    "S13:RETURN_HOME"
+  ],
+  "summary": "",
+  "overall_score": 0.0
+}

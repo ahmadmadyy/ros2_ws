@@ -119,11 +119,21 @@ class AnalyzeRequest(BaseModel):
     approach_height: float = 0.18
     retreat_height: float = 0.18
     grasp_gripper_rad: float = 0.57
+    grasp_quaternion: str = "1.0, 0.0, 0.0, 0.0"   # qx, qy, qz, qw (top-down)
     place_description: str = "N/A — pick only"
     scene_context: str = (
         "Flat table. Screwdriver upright in MoveIt planning scene at x=0.45, y=0.00. "
         "No other obstacles. Robot base at world origin."
     )
+    # Screwing-specific parameters (used by checklist / pairwise / temporal prompts)
+    screw_x: float = 0.40
+    screw_y: float = 0.10
+    n_cycles: int = 5
+    wrist3_safe_min: float = -5.983   # -(2π - 0.3)
+    wrist3_safe_max: float = 5.983    #  (2π - 0.3)
+    screw_step_rad: float = -0.785    # -π/4
+    # Reference text for pairwise eval prompt (leave empty to auto-skip)
+    reference_analysis: str = ""
     # If provided, skip the Cosmos call (useful for testing Llama judge alone)
     cosmos_analysis: Optional[str] = None
     # Per-call prompt overrides (filename within prompts/ directory)
@@ -149,3 +159,6 @@ class AnalyzeResponse(BaseModel):
     critical_failures: List[str] = []
     suggestions: List[str] = []
     parse_error: Optional[str] = None
+    # Full Llama output preserved for non-standard prompt formats
+    # (checklist trajectory_checks, temporal event_alignment, pairwise verdicts, etc.)
+    raw_result: Optional[dict] = None

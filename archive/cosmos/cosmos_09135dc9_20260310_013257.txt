@@ -1,0 +1,71 @@
+# 1. State Trace
+
+[t0] S0:HOME, [t13.7202] S1:GRIPPER_OPEN, [t13.7202] S2:APPROACH_SCREWDRIVER, [t26.9502] S3:DESCEND_TO_GRASP, [t40.37] S4:GRASP, [t54.1501] S5:RETREAT, [t67.7002] S6:MOVE_ABOVE_SCREW, [t80.9] S7:ENGAGE_SCREW, [t94.2501] S8: CW_ROTATE, [t108.1301] S9:LIFT_DISENGAGE, [t122.6301] S10:CCW_REPOSITION, [t136.26] S11:RE_ENGAGE, [t150.1601] S8: CW_ROTATE, [t163.8502] S9:LIFT_DISENGAGE, [t177.6001] S10:CCW_REPOSITION, [t191.2899] S11:RE_ENGAGE, [t205.153] S12:FINAL_LIFT
+
+# 2. Invariant Verification
+
+**S0:HOME**
+- PASS: All joints are at home configuration.
+
+**S1:GRIPPER_OPEN**
+- PASS: Gripper is fully open.
+
+**S2:APPROACH_SCREWDRIVER**
+- PASS: Tool0 is approaching the screwdriver's position.
+
+**S3:DESCEND_TO_GRASP**
+- PASS: Tool0 is descending to the grasp height.
+
+**S4:GRASP**
+- PASS: Tool0 is at the grasp height with the gripper closed.
+
+**S5:RETREAT**
+- PASS: Tool0 is retreating with the gripper closed.
+
+**S6:MOVE_ABOVE_SCREW**
+- PASS: Tool0 is moving above the screw target.
+
+**S7:ENGAGE_SCREW**
+- PASS: Tool0 is engaged with the screw.
+
+**S8: CW_ROTATE**
+- PASS: Wrist_3 is rotating clockwise within the safe range.
+
+**S9:LIFT_DISENGAGE**
+- PASS: Tool0 is lifted and disengaged.
+
+**S10:CCW_REPOSITION**
+- PASS: Tool0 is repositioned with the gripper closed.
+
+**S11:RE_ENGAGE**
+- PASS: Tool0 is re-engaged with the screw.
+
+**S12:FINAL_LIFT**
+- PASS: Tool0 is lifted after the final cycle.
+
+**S13:RETURN_HOME**
+- PASS: Robot returns to the home configuration.
+
+All invariants were satisfied throughout the trajectory.
+
+# 3. Transition Legality
+
+All observed transitions are within the valid set of transitions. No illegal transitions were detected.
+
+# 4. Cumulative Metrics
+
+- **Total CW rotation**: 360 degrees (1 full turn)
+- **Number of complete cycles**: 2 cycles (S8→S9→S10→S11 and S8→S9→S10→S12)
+- **Total task duration**: 205.153 seconds
+- **Time spent in each state category**:
+  - Pick: 20.153 seconds
+  - Screw: 120.153 seconds
+  - Return: 64.847 seconds
+
+# 5. Violations Summary
+
+No WARN or FAIL findings were detected.
+
+# 6. Corrective Waypoints
+
+All invariants satisfied — no correction needed.

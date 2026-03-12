@@ -1,0 +1,86 @@
+You are an expert evaluator for robotic screwing tasks. You receive a Cosmos Reason2 analysis of a UR5e robot's screwing trajectory and the raw joint trajectory. Your job is to independently score the execution quality across 5 dimensions.
+
+## Task Context
+- **Task**: {task_description}
+- **Robot**: {robot_description}
+- **Screwdriver**: at {screwdriver_position}, grasped at tool0 z={grasp_z} m
+- **Screw target**: {screw_position}
+- **Expected screwing cycles**: {n_cycles}
+- **CW step size**: {screw_step_rad} rad per step
+- **Wrist_3 safe range**: [{wrist3_safe_min}, {wrist3_safe_max}] rad
+- **Gripper closed at**: {grasp_gripper_position} rad
+
+## Cosmos Analysis to Evaluate
+{cosmos_reasoning_text}
+
+## Joint Trajectory
+Fields per row: `t` (seconds elapsed), `joints` [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3] in radians, `gripper_state` (0.0=open, 1.0=closed).
+{joint_trajectory_json}
+
+---
+
+## Scoring Rubric
+
+Score each dimension 1-5 using the criteria below. Base your score on both the trajectory data and the Cosmos analysis, but form your own independent judgment.
+
+### 1. Task Success (1-5)
+Did the robot complete the full screwing task?
+- 5: All {n_cycles} screwing cycles completed; robot returned to home.
+- 4: All cycles complete but return home was imperfect or skipped.
+- 3: Partial -- some cycles done, task abandoned or interrupted.
+- 2: Screwdriver grasped and engaged but no effective screwing occurred.
+- 1: Critical failure -- screwdriver not grasped, or never engaged with screw.
+
+### 2. Phase Correctness (1-5)
+Did the robot follow the expected phase sequence?
+Expected: Home -> Open gripper -> Approach screwdriver -> Grasp -> Retreat -> Move above screw -> Engage -> {n_cycles}x(CW stroke -> Lift -> CCW wrist reset -> Re-engage [LAST cycle: skip Re-engage, move to approach height instead]) -> Return home.
+- 5: All phases in correct order, no missing or repeated phases.
+- 4: One minor phase deviation.
+- 3: 1-2 phases missing or out of order but core screwing was attempted.
+- 2: Major phase violations.
+- 1: Phase sequence fundamentally wrong or unrecognisable.
+
+### 3. Screwing Quality (1-5)
+Quality of the CW screwing strokes:
+- 5: Clean CW strokes with only wrist_3 decreasing; other joints stationary; wrist_3 stayed within [{wrist3_safe_min}, {wrist3_safe_max}].
+- 4: CW strokes mostly clean with minor spurious joint motion (<0.05 rad).
+- 3: CW strokes present but other joints noticeably move during rotation.
+- 2: Wrist_3 moved CW but strokes were inconsistent or wrist_3 hit limits.
+- 1: No effective CW rotation detected, or wrist_3 exceeded safe range.
+
+### 4. Anomaly Severity (1-5) -- higher = fewer/milder anomalies
+- 5: No anomalies -- all invariants held throughout.
+- 4: Only minor deviations (WARN level) -- task still succeeded.
+- 3: One significant anomaly that reduced quality but did not cause failure.
+- 2: Multiple significant anomalies or one near-critical issue.
+- 1: Critical failure (collision risk, joint limit breach, tool dropped).
+
+### 5. Corrective Guidance (1-5)
+Is the Cosmos analysis actionable for improving the robot?
+- 5: Identifies specific failures with correct corrective waypoints.
+- 4: Good guidance with minor gaps.
+- 3: Some useful guidance but incomplete or partially incorrect.
+- 2: Guidance too vague or contains incorrect recommendations.
+- 1: No guidance, or guidance would make things worse.
+
+---
+
+## Output Format
+
+Return ONLY this JSON. No markdown, no text outside the JSON.
+
+{
+  "task_success":        {"score": <1-5>, "justification": "<one sentence>"},
+  "phase_correctness":   {"score": <1-5>, "justification": "<one sentence>"},
+  "screwing_quality":    {"score": <1-5>, "justification": "<one sentence>"},
+  "anomaly_severity":    {"score": <1-5>, "justification": "<one sentence>"},
+  "corrective_guidance": {"score": <1-5>, "justification": "<one sentence>"},
+  "overall_score": <float 0.0-1.0>,
+  "task_outcome": "<success|partial|failure>",
+  "critical_failures": ["<CRITICAL issue only, max 3>"],
+  "suggestions": ["<concrete improvement, max 3>"]
+}
+
+overall_score = (task_success*0.30 + phase_correctness*0.20 + screwing_quality*0.25 + anomaly_severity*0.15 + corrective_guidance*0.10) / 5.0
+task_outcome: "success" if overall_score >= 0.70, "partial" if >= 0.50, else "failure".
+critical_failures and suggestions: strings only. If none, use [].

@@ -1,0 +1,77 @@
+### 1. Joint Velocity Profile
+
+#### Joint Velocity Segments
+```
+joint_1 (elbow_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+joint_2 (shoulder_pan_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+joint_3 (shoulder_lift_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+joint_4 (rq_robotiq_85_left_inner_knuckle_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+joint_5 (rq_robotiq_85_left_knuckle_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+joint_6 (rq_robotiq_85_right_knuckle_joint): [0.0–10.0: stationary] [10.1–20.0: stationary] ...
+```
+
+#### Joint Velocity Profile Summary
+```
+joint_1: [0.0–10.0: stationary] [10.1–20.0: stationary]
+joint_2: [0.0–10.0: stationary] [10.1–20.0: stationary]
+joint_3: [0.0–10.0: stationary] [10.1–20.0: stationary]
+joint_4: [0.0–10.0: stationary] [10.1–20.0: stationary]
+joint_5: [0.0–10.0: stationary] [10.1–20.0: stationary]
+joint_6: [0.0–10.0: stationary] [10.1–20.0: stationary]
+```
+
+### 2. Change-Point Detection
+
+| Timestep | Changed Joint(s) | Nature of Change |
+|--------|------------------|------------------|
+| 10.0   | Joint 1          | Started moving |
+| 10.1   | Joint 1          | Continued motion |
+| 10.1   | Joint 2          | Started moving |
+| 10.1   | Joint 2          | Continued motion |
+| 10.1   | Joint 3          | Started moving |
+| 10.1   | Joint 3          | Continued motion |
+| 10.1   | Joint 4          | Started moving |
+| 10.1   | Joint 4          | Continued motion |
+| 10.1   | Joint 5          | Started moving |
+| 10.1   | Joint 5          | Continued motion |
+| 10.1   | Joint 6          | Started moving |
+| 10.1   | Joint 6          | Continued motion |
+
+### 3. Activity Inference
+
+| Segment | Active Joints | Velocity Category | Activity |
+|-------|---------------|-------------------|---------|
+| 0–10.0 | Joint 1        | Stationary        | Initial positioning |
+| 10.1–20.0 | Joint 2       | Stationary        | Maintaining alignment |
+| 10.1–20.0 | Joint 3       | Stationary        | Ensuring stable base |
+| 10.1–20.0 | Joint 4       | Stationary        | Locking mechanism engagement |
+| 10.1–20.0 | Joint 5       | Stationary        | Knuckle joint stabilization |
+| 10.1–20.0 | Joint 6       | Stationary        | Final adjustments |
+
+### 4. Anomaly Detection
+
+- **Velocity Spike**: None detected
+- **Multi-joint Screwing**: None detected
+- **Wrong-direction Screwing**: None detected
+- **Gripper Instability**: None detected
+- **Stall**: None detected
+- **Limit Approach**: None detected
+
+### 5. Screwing Effectiveness Summary
+
+| Metric | Value |
+|-------|-------|
+| Number of CW Segments | 1 |
+| Total CW Angular Displacement | ~1.0 rad |
+| Total CCW Angular Displacement | ~0.0 rad |
+| Net Rotation | ~1.0 rad |
+| Average CW Angular Velocity | ~0.1 rad/s |
+| Average CCW Angular Velocity | ~0.0 rad/s |
+
+### 6. Corrective Feedback
+
+No critical anomalies detected. Trajectory is clean — no correction needed.
+
+### 7. Corrective Waypoints (if needed)
+
+None required. Trajectory is clean and effective.

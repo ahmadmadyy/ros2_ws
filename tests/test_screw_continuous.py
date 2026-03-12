@@ -18,7 +18,9 @@ Sequence:
     (d) Lower back to engage height [skip on last cycle].
 
   Return:
-    11. Return home.
+    11. Open gripper — drop screwdriver.
+    12. Detach screwdriver from tool0.
+    13. Return home.
 
 Key design — orientation tracking:
   After wrist_3 rotates by Δ from the initial top-down pose q=(1,0,0,0),
@@ -169,6 +171,38 @@ def _ik_first(moveit, pose, seeds):
         if j is not None:
             return j
     return None
+
+
+def detach_screwdriver(node, object_id: str, link_name: str) -> bool:
+    """Detach a collision object from a robot link and return it to the world."""
+    from moveit_msgs.srv import ApplyPlanningScene
+    from moveit_msgs.msg import PlanningScene, AttachedCollisionObject, CollisionObject
+
+    scene = PlanningScene()
+    scene.is_diff = True
+
+    aco = AttachedCollisionObject()
+    aco.link_name = link_name
+    aco.object.id = object_id
+    aco.object.operation = CollisionObject.REMOVE
+    scene.robot_state.attached_collision_objects.append(aco)
+    scene.robot_state.is_diff = True
+
+    from robot_agent.moveit_client import _wait_for_future
+    client = node.create_client(ApplyPlanningScene, '/apply_planning_scene')
+    if not client.wait_for_service(timeout_sec=5.0):
+        node.get_logger().error('detach_screwdriver: /apply_planning_scene not available')
+        return False
+
+    req = ApplyPlanningScene.Request()
+    req.scene = scene
+    result = _wait_for_future(client.call_async(req), timeout_sec=5.0)
+    ok = result is not None and result.success
+    if ok:
+        node.get_logger().info(f"Detached '{object_id}' from '{link_name}'")
+    else:
+        node.get_logger().error(f"Failed to detach '{object_id}' from '{link_name}'")
+    return ok
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +410,10 @@ def main():
             (f"Continuous screw — {N_CYCLES} cycles "
              f"(CW to limit → lift → CCW only wrist_3 → lower)",
              run_screw_cycles),
+            ("Open gripper — drop screwdriver",
+             lambda: gripper.open()),
+            ("Detach screwdriver from tool0",
+             lambda: detach_screwdriver(node, "screwdriver", "tool0")),
             ("Return home",
              lambda: moveit.plan_and_execute_joints(HOME_JOINTS, velocity_scaling=0.3)),
         ]

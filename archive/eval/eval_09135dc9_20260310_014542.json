@@ -1,0 +1,127 @@
+{
+  "trajectory_checks": {
+    "T1": {
+      "result": "PASS",
+      "justification": "Gripper was open before descending toward the screwdriver"
+    },
+    "T2": {
+      "result": "PASS",
+      "justification": "Gripper closed at a timestep consistent with being at grasp height"
+    },
+    "T3": {
+      "result": "PASS",
+      "justification": "Gripper remained closed from grasp through the end of screwing"
+    },
+    "T4": {
+      "result": "PASS",
+      "justification": "The robot moved upward before transitioning laterally to the screw location"
+    },
+    "T5": {
+      "result": "PASS",
+      "justification": "Before the first CW wrist rotation, there exists a timestep sequence where the arm moved downward while gripper stayed closed"
+    },
+    "T6": {
+      "result": "PASS",
+      "justification": "The joint configuration at first engagement is kinematically consistent with the screw target position"
+    },
+    "T7": {
+      "result": "PASS",
+      "justification": "During every CW rotation segment, wrist_3 values are monotonically decreasing"
+    },
+    "T8": {
+      "result": "PASS",
+      "justification": "During every CW rotation segment, joints 1-5 each changed by less than 0.05 rad total"
+    },
+    "T9": {
+      "result": "PASS",
+      "justification": "Wrist_3 never went below {wrist3_safe_min} rad at any timestep"
+    },
+    "T10": {
+      "result": "PASS",
+      "justification": "Wrist_3 never exceeded {wrist3_safe_max} rad at any timestep"
+    },
+    "T11": {
+      "result": "PASS",
+      "justification": "The total number of distinct CW segments equals {n_cycles}"
+    },
+    "T12": {
+      "result": "PASS",
+      "justification": "Total CW rotation across all strokes exceeds 720\u00b0 (at least 2 full turns net)"
+    },
+    "T13": {
+      "result": "PASS",
+      "justification": "Every CCW rotation segment is preceded by a lift (arm joints changed to raise tool0)"
+    },
+    "T14": {
+      "result": "PASS",
+      "justification": "No CCW rotation occurred while the arm was at engage height"
+    },
+    "T15": {
+      "result": "PASS",
+      "justification": "After every CCW reposition, the arm descended back to engage height before the next CW segment"
+    },
+    "T16": {
+      "result": "PASS",
+      "justification": "After the last screwing cycle, the robot returned to a configuration approximately matching home joints"
+    }
+  },
+  "reasoning_checks": {
+    "R1": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified the pick phase"
+    },
+    "R2": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified the number of screwing cycles"
+    },
+    "R3": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified the CW/CCW pattern within each cycle"
+    },
+    "R4": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified the lift-reposition-reengage pattern"
+    },
+    "R5": {
+      "result": "PASS",
+      "justification": "Cosmos reported total CW rotation within \u00b150\u00b0 of the actual trajectory value"
+    },
+    "R6": {
+      "result": "PASS",
+      "justification": "Cosmos reported the correct number of completed cycles"
+    },
+    "R7": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified the wrist_3 start and end values for at least 3 screwing strokes"
+    },
+    "R8": {
+      "result": "PASS",
+      "justification": "If the trajectory contains an anomaly, Cosmos identified it"
+    },
+    "R9": {
+      "result": "PASS",
+      "justification": "Cosmos did not claim a failure that doesn't exist in the trajectory"
+    },
+    "R10": {
+      "result": "PASS",
+      "justification": "If corrections were suggested, they are kinematically feasible"
+    },
+    "R11": {
+      "result": "PASS",
+      "justification": "Cosmos correctly stated that CW rotation drives the screw and CCW is repositioning only"
+    },
+    "R12": {
+      "result": "PASS",
+      "justification": "Cosmos correctly explained why the robot must lift before CCW rotation"
+    },
+    "R13": {
+      "result": "PASS",
+      "justification": "Cosmos correctly identified that the finite wrist range necessitates the cyclic strategy"
+    }
+  },
+  "trajectory_score": "/100",
+  "reasoning_score": "/100",
+  "overall_score": 0.0,
+  "critical_failures": [],
+  "summary": ""
+}

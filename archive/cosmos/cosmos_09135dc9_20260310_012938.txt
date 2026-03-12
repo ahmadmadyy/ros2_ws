@@ -1,0 +1,37 @@
+# 1. Joint Velocity Profile
+
+**elbow_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate +] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_left_finger_tip_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_left_inner_knuckle_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate +] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_left_knuckle_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate +] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_right_finger_tip_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate +] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_right_inner_knuckle_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**rq_robotiq_85_right_knuckle_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**shoulder_lift_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**shoulder_pan_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**wrist_1_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**wrist_2_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t67.70-t80.90: stationary] [t80.90-t94.25: stationary] [t94.25-t108.13: stationary] [t108.13-t122.63: stationary] [t122.63-t136.26: stationary] [t136.26-t150.16: stationary] [t150.16-t163.85: stationary] [t163.85-t177.60: stationary] [t177.60-t191.29: stationary] [t191.29-t205.15: fast −]  
+
+**wrist_3_joint**:  
+[t0-t13.72: stationary] [t13.72-t26.95: moderate −] [t26.95-t40.37: stationary] [t40.37-t54.15: stationary] [t54.15-t67.70: stationary] [t6

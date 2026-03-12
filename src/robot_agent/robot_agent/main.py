@@ -1,3 +1,5 @@
+import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -36,8 +38,9 @@ def _kill_existing_vllm():
 def _start_vllm(model_size: str):
     """Launch vLLM in the background and block until /health responds."""
     model = f"nvidia/Cosmos-Reason2-{model_size}"
+    vllm_bin = shutil.which("vllm") or os.path.expanduser("~/.local/bin/vllm")
     cmd = [
-        "vllm", "serve", model,
+        vllm_bin, "serve", model,
         "--max-model-len", "16384",
         "--reasoning-parser", "qwen3",
         "--port", "8000",

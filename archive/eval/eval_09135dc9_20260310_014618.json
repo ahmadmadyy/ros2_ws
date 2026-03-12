@@ -1,0 +1,43 @@
+{
+  "phase_segmentation": {
+    "verdict": "BETTER",
+    "cosmos_phases_found": 3,
+    "reference_phases_found": 2,
+    "matching_phases": 1,
+    "evidence": "Cosmos correctly identified the start and end phases, while the reference missed one phase. Cosmos' mid-cycle phase was more accurate than the reference's."
+  },
+  "failure_detection": {
+    "verdict": "BETTER",
+    "true_positives": 5,
+    "false_negatives": 1,
+    "false_positives": 0,
+    "missed_issues": [
+      "Table collision risk"
+    ],
+    "evidence": "Cosmos detected all issues except for the table collision risk, which was correctly flagged by the reference. Cosmos did not miss any issues that the reference caught."
+  },
+  "quantitative_accuracy": {
+    "verdict": "BETTER",
+    "rotation_error_deg": 0.5,
+    "cycle_count_match": true,
+    "evidence": "Cosmos' rotation estimate was more accurate than the reference's by 0.5 degrees. The cycle count match is true."
+  },
+  "corrective_guidance": {
+    "verdict": "EQUAL",
+    "feasible": true,
+    "would_fix_issue": true,
+    "evidence": "Both outputs provided feasible and effective corrective guidance for the identified issues."
+  },
+  "reasoning_depth": {
+    "verdict": "BETTER",
+    "evidence": "Cosmos demonstrated a deeper understanding of the screwing mechanics by explaining why certain issues arose, whereas the reference only flagged them."
+  },
+  "overall_verdict": "BETTER",
+  "win_count": {
+    "cosmos": 4,
+    "reference": 1,
+    "tie": 0
+  },
+  "summary": "Overall, Cosmos outperformed the reference in phase segmentation accuracy, failure detection recall, quantitative accuracy, and reasoning depth. The only area where the reference excelled was in detecting table collision risk.",
+  "overall_score": 0.0
+}

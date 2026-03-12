@@ -462,8 +462,15 @@ def create_app(node: AgentNode) -> FastAPI:
                 approach_height=req.approach_height,
                 retreat_height=req.retreat_height,
                 grasp_gripper_rad=req.grasp_gripper_rad,
+                grasp_quaternion=req.grasp_quaternion,
                 place_description=req.place_description,
                 scene_context=req.scene_context,
+                screw_x=req.screw_x,
+                screw_y=req.screw_y,
+                n_cycles=req.n_cycles,
+                wrist3_safe_min=req.wrist3_safe_min,
+                wrist3_safe_max=req.wrist3_safe_max,
+                screw_step_rad=req.screw_step_rad,
                 prompt_file=req.cosmos_prompt,  # None = use active default
             )
 
@@ -477,6 +484,13 @@ def create_app(node: AgentNode) -> FastAPI:
             place_position=req.place_description,
             grasp_z=req.grasp_z,
             grasp_gripper_rad=req.grasp_gripper_rad,
+            grasp_quaternion=req.grasp_quaternion,
+            screw_position=f"[{req.screw_x:.3f}, {req.screw_y:.3f}, 0.000]",
+            n_cycles=req.n_cycles,
+            wrist3_safe_min=req.wrist3_safe_min,
+            wrist3_safe_max=req.wrist3_safe_max,
+            screw_step_rad=req.screw_step_rad,
+            reference_analysis=req.reference_analysis,
             prompt_file=req.eval_prompt,  # None = use active default
         )
 
@@ -504,6 +518,9 @@ def create_app(node: AgentNode) -> FastAPI:
             critical_failures=result.get("critical_failures", []),
             suggestions=result.get("suggestions", []),
             parse_error=result.get("parse_error"),
+            raw_result={k: v for k, v in result.items()
+                        if k not in ("overall_score", "task_outcome", "trace_id",
+                                     "trace_label", "parse_error")},
         )
 
     return app

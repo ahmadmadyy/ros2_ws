@@ -1,0 +1,307 @@
+You are an expert robotic motion analyst with deep knowledge of industrial screwing tasks, UR robot kinematics, and Robotiq gripper dynamics. A robot just completed a screwing task and we have recorded every joint state from start to finish. Your job is to read this trace like a detective — decode what the robot did, reconstruct the sequence of events, and render a verdict on whether this was a good screwing execution or not.
+
+---
+
+## Robot Profile
+
+- **Arm**: Universal Robots 6-DOF (UR-series)
+- **End-effector**: Robotiq 85 parallel gripper
+- **Primary screwing joint**: `wrist_3_joint` (the terminal rotational axis — this is what spins the screwdriver)
+- **Vertical descent joint**: `shoulder_lift_joint` (negative values = arm lowered toward workpiece)
+- **Gripper state**: `rq_robotiq_85_left_knuckle_joint` — 0.0 rad = fully open, 0.57 rad = fully closed
+
+### Joint Index Map (consistent across all snapshots)
+```
+Index 0:  elbow_joint
+Index 1:  rq_robotiq_85_left_finger_tip_joint
+Index 2:  rq_robotiq_85_left_inner_knuckle_joint
+Index 3:  rq_robotiq_85_left_knuckle_joint         ← gripper open/close
+Index 4:  rq_robotiq_85_right_finger_tip_joint
+Index 5:  rq_robotiq_85_right_inner_knuckle_joint
+Index 6:  rq_robotiq_85_right_knuckle_joint
+Index 7:  shoulder_lift_joint                       ← arm height / vertical approach
+Index 8:  shoulder_pan_joint                        ← horizontal base rotation
+Index 9:  wrist_1_joint
+Index 10: wrist_2_joint
+Index 11: wrist_3_joint                             ← primary screwing axis
+```
+
+**Coordinate convention**: wrist_3 negative velocity = clockwise = screw tightening direction.
+
+---
+
+## Trace Metadata
+
+```json
+{
+  "trace_id": "6e548131",
+  "label": "continuous_screw_topdown",
+  "duration_sec": 205.2701,
+  "num_snapshots": 19219,
+  "sample_rate_hz": 93.6,
+  "start_timestamp": 1773178564.902192
+}
+```
+
+---
+
+## Sampled Joint Trajectory
+
+The following snapshots are sampled from key transition moments across the full 205-second execution. Each snapshot shows: elapsed time (t), joint positions (radians), and joint velocities (rad/s).
+
+### Snapshot 1 — t=0.00s | Phase: Home Position
+```
+shoulder_pan:   0.0000  (vel: 0.0000)
+shoulder_lift: -1.5700  (vel: 0.0000)   ← standard UR home height
+elbow:          0.0000  (vel: 0.0000)
+wrist_1:       -1.5700  (vel: 0.0000)
+wrist_2:        0.0000  (vel: 0.0000)
+wrist_3:        0.0000  (vel: 0.0000)
+gripper:        0.0000                  ← OPEN
+```
+
+### Snapshot 2 — t=2.07s | Phase: First Motion
+```
+shoulder_pan:  -0.0843  (vel: ~0.000)
+shoulder_lift: -1.5704  (vel: ~0.000)
+elbow:          0.0000  (vel: ~0.000)
+wrist_3:        0.0000  (vel: -0.119)   ← wrist_3 begins CW rotation
+gripper:        0.0000                  ← still OPEN
+```
+
+### Snapshot 3 — t=4.55s | Phase: Arm Descends
+```
+shoulder_lift: -1.7108                  ← arm lowering toward workpiece
+elbow:          ~0.0
+wrist_3:        (spinning CW)
+gripper:        0.0000                  ← still OPEN
+```
+
+### Snapshot 4 — t=7.78s | GRIPPER EVENT: CLOSE
+```
+shoulder_lift: ~-1.71
+elbow:          ~2.26                   ← arm unfolded into working position
+wrist_3:        (various, mid-spin)
+gripper:        0.0000 → 0.5700        ← GRASP: tool captured
+```
+
+### Snapshot 5 — t=20.54s | Phase: Mid-Screwing Block 1
+```
+shoulder_pan:  -0.0843  (vel:  0.0001)
+shoulder_lift: -1.6402  (vel:  0.0005)  ← settled working height
+elbow:          2.2568  (vel: -0.0004)
+wrist_1:       -2.1878  (vel:  0.0002)
+wrist_2:       -1.5713  (vel:  0.0006)
+wrist_3:       -4.2559  (vel: -0.5469)  ← deep CW accumulation, still spinning
+gripper:        0.5700                  ← CLOSED
+```
+
+### Snapshot 6 — t=25.11s | RESET EVENT 1 BEGINS
+```
+shoulder_lift: -1.7275                  ← arm dips deeper (disengaging screw contact)
+wrist_3 velocity: +0.154               ← DIRECTION REVERSAL: now spinning CCW (unwinding)
+gripper:        0.5700
+```
+
+### Snapshot 7 — t=33.37s | RESET EVENT 1 ENDS
+```
+shoulder_lift: -1.7269                  ← still lowered
+wrist_3 velocity: +0.070 → ~0          ← CCW unwind complete
+```
+*Reset 1 duration: ~8.3 seconds of CCW unwinding*
+
+### Snapshot 8 — t=50.69s | Phase: Start of Screwing Block 2
+```
+shoulder_lift: -1.6404                  ← back to working height
+wrist_3:       -0.2999  (vel: 0.0000)  ← wrist reset to near-zero, ready to re-engage
+gripper:        0.5700
+```
+
+### Snapshot 9 — t=65.92s | RESET EVENT 2 BEGINS
+```
+shoulder_lift: -1.7285
+wrist_3 velocity: +0.255               ← CCW unwind begins again
+```
+*Reset 2 duration: ~8.4 seconds*
+
+### Snapshot 10 — t=101.83s | Phase: Mid-Screwing Block 3
+```
+shoulder_lift: -1.6405  (vel:  0.0012)
+wrist_3:       -4.3521  (vel: -0.6055)  ← strong CW, approaching joint limit
+gripper:        0.5700
+```
+
+### Snapshot 11 — t=106.48s | RESET EVENT 3 BEGINS
+```
+shoulder_lift: -1.7267
+wrist_3 velocity: +0.126               ← CCW unwind
+```
+*Reset 3 duration: ~8.4 seconds*
+
+### Snapshot 12 — t=147.03s | RESET EVENT 4 BEGINS
+```
+shoulder_lift: -1.7280
+wrist_3 velocity: +0.108               ← CCW unwind
+```
+*Reset 4 duration: ~8.35 seconds*
+
+### Snapshot 13 — t=153.57s | Phase: Mid-Screwing Block 5
+```
+shoulder_lift: -1.7284  (vel: -0.0001)
+elbow:          2.1552                  ← slightly different arm configuration
+wrist_3:        3.7771  (vel:  1.5675)  ← VERY high positive velocity (rapid CCW)
+gripper:        0.5700
+```
+
+### Snapshot 14 — t=184.29s | Phase: Late Screwing, Near End
+```
+shoulder_lift: -1.6406
+elbow:          2.2563
+wrist_3:       -5.0128  (vel: 0.0000)   ← maximum CW accumulation, paused
+gripper:        0.5700
+```
+
+### Snapshot 15 — t=187.49s | RESET EVENT 5 BEGINS
+```
+shoulder_lift: -1.7274
+wrist_3 velocity: +0.109               ← final CCW unwind
+```
+*Reset 5 duration: ~8.41 seconds*
+
+### Snapshot 16 — t=197.88s | Phase: Final Retract / Return Home
+```
+shoulder_lift: -1.7981                  ← arm at deepest point before lifting
+wrist_3 velocity: -0.104               ← one final CW burst during retract
+gripper:        0.5700                  ← still CLOSED (tool held)
+```
+
+### Snapshot 17 — t=204.72s | Phase: Approaching Home
+```
+shoulder_lift: -1.5708                  ← restored to home height
+wrist_3 velocity: ~0                   ← spinning stopped
+```
+
+### Snapshot 18 — t=205.27s | FINAL STATE
+```
+shoulder_pan:  -0.0002  (vel: 0.0000)
+shoulder_lift: -1.5708  (vel: 0.0000)   ← home
+elbow:          0.0005  (vel: 0.0000)
+wrist_1:       -1.5717  (vel: 0.0000)
+wrist_2:       -0.0007  (vel: 0.0000)
+wrist_3:        0.0005  (vel: 0.0000)   ← back to ~0, fully unwound
+gripper:        0.5700                  ← CLOSED — tool still gripped
+```
+
+---
+
+## Wrist Reset Cycle Summary
+
+The robot uses a "screw-then-reset" strategy because wrist_3 has a limited joint range. When the joint accumulates too much CW rotation (~-4 rad), it must unwind before continuing.
+
+| Reset # | Start (s) | End (s)  | Duration (s) | Direction |
+|---------|-----------|----------|--------------|-----------|
+| 1       | 25.11     | 33.37    | 8.26         | CCW (+)   |
+| 2       | 65.92     | 74.32    | 8.40         | CCW (+)   |
+| 3       | 106.48    | 114.90   | 8.42         | CCW (+)   |
+| 4       | 147.03    | 155.38   | 8.35         | CCW (+)   |
+| 5       | 187.49    | 195.90   | 8.41         | CCW (+)   |
+
+**Total time in reset (non-screwing):** ~41.8 seconds out of 205.3 seconds = **20.4% overhead**
+
+---
+
+## CW Screwing Activity Pattern (wrist_3 spin bursts, examples from block 3)
+
+Between resets, the screwing is not a single continuous spin — it consists of short bursts:
+- Each burst: ~1.5 seconds of CW rotation at ~0.1–0.4 rad/s
+- Gap between bursts: ~0.4–0.5 seconds of near-zero velocity
+- Burst count per block: approximately 10–15 bursts per ~40-second screwing block
+
+---
+
+## Your Analysis Tasks
+
+You are now being asked to analyze this trace deeply. Treat this as a professional motion audit. Address all of the following:
+
+### Task 1 — Comprehension Check: What Happened?
+Narrate the full sequence of events in this trace from start to finish. Describe every meaningful phase the robot went through. Use the joint data to support your narrative. Be specific about what each joint was doing and why. Show us you truly understood this recording.
+
+### Task 2 — Phase Identification
+List and name every distinct phase you can identify in this trace. For each phase, provide:
+- Phase name
+- Approximate time range (start → end)
+- Key joint behavior that defines this phase
+- Purpose of this phase within the screwing task
+
+### Task 3 — Quality Verdict
+Is this a good screwing sequence? Render a clear verdict and defend it. Consider:
+
+**Arguments to evaluate FOR quality:**
+- Did the robot complete the task (return to home with expected joint positions)?
+- Was the gripper usage correct (open → close → hold)?
+- Were the reset cycles consistent and predictable?
+- Did the robot maintain a stable working height during screwing?
+
+**Arguments to evaluate AGAINST quality:**
+- The reset cycles cost 41.8 seconds (~20% of total time). Is that acceptable or wasteful?
+- The CW screwing is NOT continuous — it consists of burst-and-pause micro-patterns. What does this tell you about the control quality?
+- At t=153.57s, wrist_3 velocity spikes to +1.5675 rad/s during a reset. Is this a sign of aggressive/uncontrolled motion?
+- The gripper remains CLOSED at the final state (t=205.27s). Is the task truly complete if the tool was never released?
+- Total duration is 205 seconds. For a single-screw top-down approach — is this fast, slow, or concerning?
+
+### Task 4 — Anomaly Spotting
+Flag anything in the trace that looks abnormal, unexpected, or suspicious. For each anomaly:
+- What you observed (specific time, joint, value)
+- Why it stands out
+- Whether it's a critical issue, a minor inefficiency, or explainable behavior
+
+### Task 5 — Screwing Strategy Assessment
+This trace uses the **"continuous screw with periodic wrist reset"** strategy.
+- Explain in your own words how this strategy works mechanically.
+- What are the tradeoffs of this strategy vs. alternatives (e.g., regripping the screwdriver mid-task, using a different tool orientation)?
+- Is this the right strategy for a top-down approach (`continuous_screw_topdown`)?
+
+---
+
+## Output Format
+
+Structure your response as follows:
+
+**SECTION 1 — TRACE NARRATIVE**
+A fluent paragraph-form story of what the robot did from start to finish.
+
+**SECTION 2 — PHASE TABLE**
+A structured table with columns: Phase Name | Time Range | Defining Joints | Purpose
+
+**SECTION 3 — QUALITY VERDICT**
+A clear PASS / CONDITIONAL PASS / FAIL verdict with a score from 0–10 and a 3–5 sentence justification.
+
+**SECTION 4 — ANOMALY REPORT**
+Bullet list of anomalies. Each entry: [SEVERITY: CRITICAL/WARNING/INFO] Time | Joint | Observation | Assessment
+
+**SECTION 5 — STRATEGY ASSESSMENT**
+Free-form analysis of the screwing strategy, its tradeoffs, and recommendations.
+
+**SECTION 6 — JSON SUMMARY**
+End with this structured JSON block:
+```json
+{
+  "trace_id": "6e548131",
+  "overall_verdict": "<PASS | CONDITIONAL_PASS | FAIL>",
+  "quality_score": <0.0-10.0>,
+  "total_phases_identified": <int>,
+  "reset_cycles_detected": <int>,
+  "screwing_efficiency_pct": <float>,
+  "gripper_events": [
+    {"time_sec": <float>, "event": "<OPEN|CLOSE>", "joint_value": <float>}
+  ],
+  "critical_anomalies": ["<string>"],
+  "warnings": ["<string>"],
+  "recommended_improvements": ["<string>"],
+  "understood_task": true
+}
+```
+
+---
+
+Do not hallucinate joint values. Every claim you make about what a joint did must be traceable to the sampled data above. If you are uncertain about something between sampled timestamps, say so explicitly.
