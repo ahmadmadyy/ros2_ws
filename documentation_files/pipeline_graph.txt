@@ -1,0 +1,140 @@
+Pipeline Flow — Cosmos and Evaluation Prompt Pairing
+
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                     SCREW TRACE RECORDING                       │
+    │                                                                 │
+    │   test_screw_continuous.py  ──►  outputs/screw_trace/           │
+    │                                  screw_continuous_<ts>.json     │
+    └───────────────────────────┬─────────────────────────────────────┘
+                                │
+                                │  sampled to 80 waypoints
+                                │
+                                ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                   STAGE 1 — COSMOS REASONING                    │
+    │                   run_cosmos_4prompts.py                         │
+    │                   Model: Cosmos-Reason2-2B or 8B (vLLM)         │
+    │                                                                 │
+    │   ┌──────────────────────────┐    ┌───────────────────────────┐ │
+    │   │  cosmos_screw.txt        │──►│ cosmos_screw_<id>_<ts>.txt│ │
+    │   │  (general evaluator)     │    └───────────────────────────┘ │
+    │   └──────────────────────────┘                                  │
+    │                                                                 │
+    │   ┌──────────────────────────┐    ┌───────────────────────────┐ │
+    │   │cosmos_fault_detection.txt│──►│cosmos_fault_detection_*.txt│ │
+    │   │  (fault specialist)      │    └───────────────────────────┘ │
+    │   └──────────────────────────┘                                  │
+    │                                                                 │
+    │   ┌──────────────────────────┐    ┌───────────────────────────┐ │
+    │   │cosmos_energy_dynamics.txt│──►│cosmos_energy_dynamics_*.txt│ │
+    │   │  (dynamics analyst)      │    └───────────────────────────┘ │
+    │   └──────────────────────────┘                                  │
+    │                                                                 │
+    │   ┌──────────────────────────┐    ┌───────────────────────────┐ │
+    │   │cosmos_process_quality.txt│──►│cosmos_process_quality_*.txt│ │
+    │   │  (quality engineer)      │    └───────────────────────────┘ │
+    │   └──────────────────────────┘                                  │
+    │                                                                 │
+    └──────────────────────────┬──────────────────────────────────────┘
+                               │
+                               │  each cosmos output is paired
+                               │  with its matching eval prompt
+                               │
+                               ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                   STAGE 2 — LLAMA EVALUATION                    │
+    │                   run_eval_4prompts.py                           │
+    │                   Model: Llama 3 (Ollama, temp=0.1)             │
+    │                                                                 │
+    │                                                                 │
+    │   cosmos_screw output ─────────┐                                │
+    │          +                     ├──► eval_screw.txt ──►          │
+    │   trajectory JSON ─────────────┘        │                       │
+    │                                         ▼                       │
+    │                              eval_screw_<id>_<ts>.json          │
+    │                                                                 │
+    │                                                                 │
+    │   cosmos_fault_detection output┐                                │
+    │          +                     ├──► eval_fault_detection.txt──►  │
+    │   trajectory JSON ─────────────┘        │                       │
+    │                                         ▼                       │
+    │                          eval_fault_detection_<id>_<ts>.json    │
+    │                                                                 │
+    │                                                                 │
+    │   cosmos_energy_dynamics output┐                                │
+    │          +                     ├──► eval_energy_dynamics.txt──►  │
+    │   trajectory JSON ─────────────┘        │                       │
+    │                                         ▼                       │
+    │                          eval_energy_dynamics_<id>_<ts>.json    │
+    │                                                                 │
+    │                                                                 │
+    │   cosmos_process_quality output┐                                │
+    │          +                     ├──► eval_process_quality.txt──►  │
+    │   trajectory JSON ─────────────┘        │                       │
+    │                                         ▼                       │
+    │                          eval_process_quality_<id>_<ts>.json    │
+    │                                                                 │
+    └─────────────────────────────────────────────────────────────────┘
+
+
+--- Pairing Table ---
+
+Each Cosmos prompt feeds exactly one eval prompt. The pairing is
+one-to-one and fixed — no cross-evaluation between prompts.
+
+    Cosmos Prompt                   Eval Prompt                   Slug
+    ─────────────────────────────   ─────────────────────────── ──────────────
+    cosmos_screw.txt             → eval_screw.txt                screw
+    cosmos_fault_detection.txt   → eval_fault_detection.txt      fault_detection
+    cosmos_energy_dynamics.txt   → eval_energy_dynamics.txt      energy_dynamics
+    cosmos_process_quality.txt   → eval_process_quality.txt      process_quality
+
+
+--- Data Flow Per Pair ---
+
+For each pair, the eval prompt receives two inputs:
+
+    1. The Cosmos text output (the model's free-form analysis)
+    2. The same trajectory JSON that Cosmos received
+
+Llama reads both side by side. It uses the trajectory as ground
+truth to verify the claims in the Cosmos output, then scores
+across the 13 rubric dimensions.
+
+
+--- What Gets Injected Where ---
+
+    ┌──────────────────────┐
+    │    Cosmos Prompt      │
+    │                       │
+    │  {task_description}   │◄── task context (robot, positions, limits)
+    │  {joint_trajectory}   │◄── sampled trajectory (80 waypoints)
+    │  {cosmos_reasoning}   │◄── "N/A" on first run
+    │                       │
+    └───────┬───────────────┘
+            │
+            │ Cosmos generates free-form text
+            │
+            ▼
+    ┌──────────────────────┐
+    │    Eval Prompt         │
+    │                       │
+    │  {task_description}   │◄── same task context as above
+    │  {joint_trajectory}   │◄── same trajectory as above
+    │  {cosmos_reasoning}   │◄── Cosmos text output from stage 1
+    │                       │
+    └───────┬───────────────┘
+            │
+            │ Llama generates scored JSON
+            │
+            ▼
+    ┌──────────────────────┐
+    │  eval_<slug>.json     │
+    │                       │
+    │  13 dimension scores  │
+    │  overall_score        │
+    │  critical_failures    │
+    │  suggestions          │
+    │  _meta (provenance)   │
+    └───────────────────────┘

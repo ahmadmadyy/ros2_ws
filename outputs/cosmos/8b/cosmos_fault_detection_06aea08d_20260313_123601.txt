@@ -1,0 +1,23 @@
+```json
+{
+  "spatial_awareness": {"score": 5, "justification": "The robot correctly identifies the screwdriver at (0.45, 0.00, 0.09) and the screw target at (0.40, 0.10). The top-down grasp orientation is maintained, and the height values for approach, engage, and grasp are consistent with the task requirements."},
+  "phase_identification": {"score": 5, "justification": "The trajectory is segmented into distinct phases: pick (approach, grasp, retreat), screw (engage, CW rotation, lift, CCW reposition, re-engage), and return. Each phase is correctly bounded by timestamps and follows the expected sequence."},
+  "screwing_mechanics": {"score": 5, "justification": "The robot performs CW rotation only while engaged, lifts before CCW repositioning, and re-engages at the correct position. The cycle repeats five times, and the wrist_3 range is managed within safe limits."},
+  "safety_awareness": {"score": 5, "justification": "The wrist_3 joint stays within the safe range [-5.983, 5.983] rad. The gripper remains closed (0.57) during all screwing cycles, and there are no collisions or unsafe motions observed."},
+  "grasp_execution": {"score": 5, "justification": "The robot approaches the screwdriver from above, descends to the correct height (0.26 m), closes the gripper to 0.57 rad, and retreats vertically without lateral drift. The grasp is stable and functional."},
+  "pick_to_screw_transition": {"score": 5, "justification": "The transition from the screwdriver to the screw target is smooth and direct. The tool orientation remains top-down throughout, and there are no unnecessary waypoints or orientation flips."},
+  "screw_engagement": {"score": 5, "justification": "The robot lowers to the correct engage height at the screw target XY position and maintains a top-down orientation. The alignment is precise, and there is no positional offset that would affect screwing."},
+  "cw_stroke_quality": {"score": 5, "justification": "During CW rotation, only wrist_3 changes, with consistent step sizes in the correct direction. The joint limits are respected, and there is no drift in other joints."},
+  "lift_reposition_reengage": {"score": 5, "justification": "The robot lifts before CCW repositioning, performs repositioning at the approach height, and re-engages at the correct screw position. The sequence is clean and repeatable for all five cycles."},
+  "cycle_completion": {"score": 5, "justification": "All five screwing cycles are completed. The total CW rotation is consistent with the expected cumulative angle, indicating successful task execution."},
+  "smoothness": {"score": 5, "justification": "All joint transitions are gradual and physically realistic. There are no sudden large jumps or jerky motions, ensuring safe and smooth operation."},
+  "efficiency": {"score": 5, "justification": "The trajectory is direct and efficient. The velocity scaling is appropriate for each phase, with slower motion for engagement and faster motion for repositioning."},
+  "consistency": {"score": 5, "justification": "The trajectory closely follows the plan described in the Cosmos reasoning output. Phase boundaries, directions, and positions are consistent, and no corrective waypoints are needed."},
+  "overall_score": 5.0,
+  "total_cw_rotation_deg": 399.99,
+  "cycles_completed": 5,
+  "critical_failures": [],
+  "suggestions": [],
+  "recommended_waypoints": []
+}
+```

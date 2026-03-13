@@ -1,0 +1,23 @@
+```json
+{
+  "spatial_awareness": {"score": 5, "justification": "The trajectory correctly identifies the screwdriver at (0.45, 0.00, 0.09) and the screw target at (0.40, 0.10). The top-down grasp orientation is maintained, and the approach height aligns with the specified grasp height of 0.26 m. No spatial errors are observed."},
+  "phase_identification": {"score": 5, "justification": "The trajectory is segmented into clear phases: grasp, pick, screw cycles, and return. Each phase is correctly bounded by timesteps, with no overlapping or misaligned transitions. The 5 screw cycles are fully executed without missing steps."},
+  "screwing_mechanics": {"score": 5, "justification": "The robot correctly uses CW rotation to drive the screw only while engaged, lifts before CCW repositioning, and maintains the top-down orientation. The wrist_3 range is respected, and no unscrewing occurs during repositioning. The cycle is repeated cleanly five times."},
+  "safety_awareness": {"score": 5, "justification": "Wrist_3 remains within [-5.983, 5.983] rad throughout. The gripper stays closed during screwing, and no collisions or orientation flips are detected. The trajectory avoids unsafe joint limits and maintains stability."},
+  "grasp_execution": {"score": 5, "justification": "The robot approaches the screwdriver from above, descends to 0.26 m, closes the gripper to 0.57 rad, and retreats cleanly. No lateral drift or height errors are observed. The grasp is stable and functional."},
+  "pick_to_screw_transition": {"score": 5, "justification": "The transition from screwdriver to screw target is smooth and direct. The tool orientation remains top-down, and no unnecessary waypoints or orientation flips are present. The trajectory is efficient and collision-free."},
+  "screw_engagement": {"score": 5, "justification": "The robot lowers precisely to the screw target XY position and correct engage height. The top-down orientation is maintained throughout. No positional offsets or height errors are detected."},
+  "cw_stroke_quality": {"score": 5, "justification": "Joints 1-5 remain nearly constant during CW strokes, with only wrist_3 rotating. The step sizes are consistent, and the rotation direction is correct (wrist_3 decreases). The safe range is respected, with no violations."},
+  "lift_reposition_reengage": {"score": 5, "justification": "Each cycle follows the lift → CCW reposition → re-engage sequence. CCW rotation occurs only at approach height, not engage height. The robot re-engages at the correct screw XY position after repositioning. No unscrewing or positional errors are observed."},
+  "cycle_completion": {"score": 5, "justification": "All 5 screwing cycles are completed. The total CW rotation is consistent with the expected cumulative angle. No cycles are skipped or incomplete."},
+  "smoothness": {"score": 5, "justification": "All joint transitions are gradual and physically realistic. No sudden large jumps or jerky motions are observed. The trajectory is smooth and safe throughout."},
+  "efficiency": {"score": 5, "justification": "The trajectory is direct and efficient, with appropriate speed variation per phase. Slower speeds are used for engagement and screwing, while faster speeds are used for repositioning. No redundant motions or unnecessary detours are present."},
+  "consistency": {"score": 5, "justification": "The trajectory follows the plan described in the Cosmos reasoning output. Phase boundaries, directions, and positions are consistent. No corrective waypoints are needed, as the trajectory is already optimal."},
+  "overall_score": 4.9,
+  "total_cw_rotation_deg": 117.8,
+  "cycles_completed": 5,
+  "critical_failures": [],
+  "suggestions": [],
+  "recommended_waypoints": []
+}
+```
