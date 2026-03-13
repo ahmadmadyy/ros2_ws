@@ -1,0 +1,71 @@
+Why Multiple Prompts Were Used and How to Choose Between Them
+
+
+The decision to use four separate prompts instead of a single all-
+purpose prompt came down to a practical problem: a 2B parameter model
+cannot reliably hold four different expert perspectives in its head
+at the same time. A monolithic prompt that asks the model to
+simultaneously think like a general evaluator, a fault detective, a
+dynamics analyst, and a process quality engineer would be several
+hundred lines long and would require constant context-switching
+mid-response. In early testing, this led to shallow answers where
+the model would touch on each perspective briefly but commit to none
+of them. Splitting the analysis into four focused prompts meant each
+run could go deeper on its own topic without being distracted by the
+others.
+
+There was also a diagnostic motivation. Running the same trajectory
+through four different lenses produces four independent scores, and
+the variation between those scores tells you something about the
+model. If a model scores well on the general screwing prompt but
+poorly on fault detection, that means it handles broad task
+comprehension better than anomaly hunting — which is useful to know
+when deciding what to trust the model with in a production pipeline.
+A single combined prompt would flatten all of that into one number
+and hide the differences.
+
+That said, not every use case needs all four prompts. Which ones to
+run depends on what question is being asked:
+
+  - cosmos_screw.txt is the default starting point. It covers the
+    full task lifecycle — pick, screw, return — and checks that the
+    basic structure of the execution is correct. If only one prompt
+    is going to be used, this is the one. It also asks for
+    recommended waypoints, which makes it the only prompt that
+    produces actionable output for replanning.
+
+  - cosmos_fault_detection.txt is for when something went wrong and
+    the goal is to find out what. It is specifically tuned to hunt
+    for velocity spikes, positional drift, gripper slippage, timing
+    gaps, and joint limit proximity events. Running it on a trace
+    that already looks correct is not very informative — as the
+    results showed, both models reported zero faults on a clean
+    trace. Its value comes when the trace contains a real anomaly
+    and the question is whether the model can spot it.
+
+  - cosmos_energy_dynamics.txt matters when the concern is efficiency
+    rather than correctness. A trace can be perfectly correct — every
+    phase in the right order, every joint within limits — and still
+    be wasteful. This prompt looks at velocity profiles, idle time,
+    acceleration demands, and the ratio of productive CW rotation to
+    total wrist motion. It is most useful in optimisation scenarios
+    where the task works but takes too long or stresses the hardware
+    unnecessarily.
+
+  - cosmos_process_quality.txt is for production readiness
+    assessment. It applies manufacturing tolerances: cycle-to-cycle
+    variation below 5%, positional repeatability within 0.005 rad,
+    takt time ratios above 40%. These are not relevant for a lab
+    prototype or a one-off demonstration — they matter when the
+    robot cell needs to run the same task thousands of times on an
+    assembly line. If the use case is research or development, this
+    prompt can be skipped. If the use case is qualifying a station
+    for production, it is the most important of the four.
+
+In practice, for routine evaluation, running cosmos_screw.txt alone
+is sufficient. For deeper investigation — after a failed run, during
+optimisation, or before production qualification — adding the
+relevant specialist prompt gives a second opinion from a different
+angle. Running all four is mainly useful for benchmarking the model
+itself, as was done in this experiment, rather than for evaluating
+the robot.
