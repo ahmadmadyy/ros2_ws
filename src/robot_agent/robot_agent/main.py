@@ -13,14 +13,18 @@ import uvicorn
 from .agent_node import AgentNode
 from .app import create_app
 
-_VLLM_HEALTH_URL = "http://localhost:8000/health"
 _VLLM_READY_TIMEOUT = 300   # seconds to wait for vLLM to become ready
 _VLLM_POLL_INTERVAL = 5     # seconds between health-check polls
 
+_VLLM_INSTANCES = [
+    {"model": "nvidia/Cosmos-Reason2-2B", "port": 8000, "gpu_util": "0.40"},
+    {"model": "nvidia/Cosmos-Reason2-8B", "port": 8001, "gpu_util": "0.55"},
+]
 
-def _is_vllm_running() -> bool:
+
+def _is_vllm_running(port: int) -> bool:
     try:
-        urllib.request.urlopen(_VLLM_HEALTH_URL, timeout=3)
+        urllib.request.urlopen(f"http://localhost:{port}/health", timeout=3)
         return True
     except Exception:
         return False
@@ -35,18 +39,17 @@ def _kill_existing_vllm():
     time.sleep(3)
 
 
-def _start_vllm(model_size: str):
-    """Launch vLLM in the background and block until /health responds."""
-    model = f"nvidia/Cosmos-Reason2-{model_size}"
+def _launch_vllm_proc(model: str, port: int, gpu_util: str) -> subprocess.Popen:
+    """Popen a vLLM server — returns immediately, does not wait for readiness."""
     vllm_bin = shutil.which("vllm") or os.path.expanduser("~/.local/bin/vllm")
     cmd = [
         vllm_bin, "serve", model,
         "--max-model-len", "16384",
         "--reasoning-parser", "qwen3",
-        "--port", "8000",
-        "--gpu-memory-utilization", "0.85",
+        "--port", str(port),
+        "--gpu-memory-utilization", gpu_util,
     ]
-    print(f"[robot_agent] Starting vLLM: {' '.join(cmd)}", flush=True)
+    print(f"[robot_agent] Launching vLLM: {' '.join(cmd)}", flush=True)
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -54,50 +57,48 @@ def _start_vllm(model_size: str):
         text=True,
     )
 
-    # Stream vLLM output in background thread
     def _stream():
         for line in proc.stdout:
-            print(f"[vllm] {line}", end="", flush=True)
+            print(f"[vllm:{port}] {line}", end="", flush=True)
 
     threading.Thread(target=_stream, daemon=True).start()
+    return proc
 
-    # Block until vLLM is ready
+
+def _wait_for_vllm(model: str, port: int, proc: subprocess.Popen):
+    """Block until the vLLM server on *port* passes its health check."""
     deadline = time.monotonic() + _VLLM_READY_TIMEOUT
     while time.monotonic() < deadline:
-        if _is_vllm_running():
-            print(f"[robot_agent] vLLM ready (model={model})", flush=True)
-            return proc
+        if _is_vllm_running(port):
+            print(f"[robot_agent] vLLM ready — model={model} port={port}", flush=True)
+            return
         time.sleep(_VLLM_POLL_INTERVAL)
-        print(f"[robot_agent] Waiting for vLLM ({model})...", flush=True)
+        print(f"[robot_agent] Waiting for vLLM ({model}, port {port})...", flush=True)
 
     proc.kill()
-    print("[robot_agent] ERROR: vLLM did not become ready within timeout. Aborting.", flush=True)
+    print(f"[robot_agent] ERROR: vLLM ({model}, port {port}) did not become ready. Aborting.", flush=True)
     sys.exit(1)
 
 
-def main():
-    # ----------------------------------------------------------------
-    # Parse cosmos_size from ROS args before rclpy.init() so we can
-    # start vLLM early. Look for --ros-args -p cosmos_size:=<val>.
-    # ----------------------------------------------------------------
-    cosmos_size = "2B"
-    args = sys.argv[1:]
-    for i, arg in enumerate(args):
-        if arg.startswith("cosmos_size:="):
-            cosmos_size = arg.split(":=", 1)[1].upper()
-        elif arg == "-p" and i + 1 < len(args) and args[i + 1].startswith("cosmos_size:="):
-            cosmos_size = args[i + 1].split(":=", 1)[1].upper()
-
-    if cosmos_size not in ("2B", "8B"):
-        print(f"[robot_agent] Unknown cosmos_size '{cosmos_size}', defaulting to 2B", flush=True)
-        cosmos_size = "2B"
-
-    # Kill any existing vLLM, then start the chosen model (blocks until ready)
-    if _is_vllm_running():
-        print("[robot_agent] Existing vLLM detected — stopping it...", flush=True)
+def _start_both_vllm():
+    """Launch both vLLM instances sequentially to avoid VRAM contention."""
+    # Kill any stale processes first
+    if any(_is_vllm_running(inst["port"]) for inst in _VLLM_INSTANCES):
+        print("[robot_agent] Existing vLLM instance(s) detected — stopping them...", flush=True)
         _kill_existing_vllm()
 
-    _start_vllm(cosmos_size)
+    # Start 2B first, wait until fully ready, then start 8B.
+    # Loading in parallel causes both to reserve VRAM simultaneously,
+    # leaving the 2B with negative KV-cache budget on a 46 GB L40S.
+    for inst in _VLLM_INSTANCES:
+        proc = _launch_vllm_proc(inst["model"], inst["port"], inst["gpu_util"])
+        _wait_for_vllm(inst["model"], inst["port"], proc)
+
+
+def main():
+    # Launch Cosmos 2B (port 8000) and Cosmos 8B (port 8001) in parallel,
+    # then block until both are ready before bringing up the ROS2 node.
+    _start_both_vllm()
 
     # ----------------------------------------------------------------
     # Normal robot_agent startup

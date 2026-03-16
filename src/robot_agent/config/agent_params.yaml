@@ -1,7 +1,11 @@
 robot_agent:
   ros__parameters:
-    # Change cosmos_model to match whichever vLLM server you started:
-    #   "nvidia/Cosmos-Reason2-2B"  (24GB VRAM, faster)
-    #   "nvidia/Cosmos-Reason2-8B"  (32GB VRAM, better reasoning)
+    # Cosmos 2B — analysis (stage 1 of pipeline)
+    # Start with: vllm serve nvidia/Cosmos-Reason2-2B --port 8000
     cosmos_url: "http://localhost:8000"
     cosmos_model: "nvidia/Cosmos-Reason2-2B"
+
+    # Cosmos 8B — evaluation + waypoint generation (stages 2 & 4 of pipeline)
+    # Start with: vllm serve nvidia/Cosmos-Reason2-8B --port 8001
+    cosmos_8b_url: "http://localhost:8001"
+    cosmos_8b_model: "nvidia/Cosmos-Reason2-8B"

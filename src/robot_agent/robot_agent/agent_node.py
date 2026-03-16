@@ -28,16 +28,20 @@ class AgentNode(Node):
         super().__init__('robot_agent')
 
         # Parameters
-        self.declare_parameter('cosmos_url',   'http://localhost:8000')
-        self.declare_parameter('cosmos_model', 'nvidia/Cosmos-Reason2-2B')
-        self.declare_parameter('cosmos_size',  '2B')
-        self.declare_parameter('ollama_url',   'http://localhost:11434')
-        self.declare_parameter('ollama_model', 'llama3:latest')
-        self.declare_parameter('cosmos_prompt', 'cosmos_screwing_phases.txt')
-        self.declare_parameter('eval_prompt',   'eval_screwing_rubric.txt')
+        self.declare_parameter('cosmos_url',      'http://localhost:8000')
+        self.declare_parameter('cosmos_model',    'nvidia/Cosmos-Reason2-2B')
+        self.declare_parameter('cosmos_size',     '2B')
+        self.declare_parameter('cosmos_8b_url',   'http://localhost:8001')
+        self.declare_parameter('cosmos_8b_model', 'nvidia/Cosmos-Reason2-8B')
+        self.declare_parameter('ollama_url',      'http://localhost:11434')
+        self.declare_parameter('ollama_model',    'llama3:latest')
+        self.declare_parameter('cosmos_prompt',   'cosmos_screw.txt')
+        self.declare_parameter('eval_prompt',     'eval_screw.txt')
 
         cosmos_url         = self.get_parameter('cosmos_url').get_parameter_value().string_value
         cosmos_model       = self.get_parameter('cosmos_model').get_parameter_value().string_value
+        cosmos_8b_url      = self.get_parameter('cosmos_8b_url').get_parameter_value().string_value
+        cosmos_8b_model    = self.get_parameter('cosmos_8b_model').get_parameter_value().string_value
         ollama_url         = self.get_parameter('ollama_url').get_parameter_value().string_value
         ollama_model       = self.get_parameter('ollama_model').get_parameter_value().string_value
         cosmos_prompt_file = self.get_parameter('cosmos_prompt').get_parameter_value().string_value
@@ -56,10 +60,12 @@ class AgentNode(Node):
         self.moveit_client = MoveItClient(self)
         self.gripper_client = GripperClient(self)
 
-        # Cosmos integration
-        self.cosmos = CosmosClient(base_url=cosmos_url, model=cosmos_model)
-        self.explainability = ExplainabilityEngine(self.cosmos, prompt_file=cosmos_prompt_file)
-        self.planner = CosmosTaskPlanner(self.cosmos)
+        # Cosmos integration — 2B for analysis, 8B for eval + waypoints
+        self.cosmos_2b = CosmosClient(base_url=cosmos_url,     model=cosmos_model)
+        self.cosmos_8b = CosmosClient(base_url=cosmos_8b_url,  model=cosmos_8b_model)
+        self.cosmos = self.cosmos_2b  # backward-compat alias used by existing endpoints
+        self.explainability = ExplainabilityEngine(self.cosmos_2b, prompt_file=cosmos_prompt_file)
+        self.planner = CosmosTaskPlanner(self.cosmos_2b)
 
         # Ollama / Llama evaluation
         self.ollama = OllamaClient(base_url=ollama_url, model=ollama_model)
@@ -70,7 +76,10 @@ class AgentNode(Node):
         self._register_skills()
 
         self.get_logger().info(
-            f'AgentNode initialized | cosmos_prompt={cosmos_prompt_file} | eval_prompt={eval_prompt_file}'
+            f'AgentNode initialized | '
+            f'cosmos_2b={cosmos_url} ({cosmos_model}) | '
+            f'cosmos_8b={cosmos_8b_url} ({cosmos_8b_model}) | '
+            f'cosmos_prompt={cosmos_prompt_file} | eval_prompt={eval_prompt_file}'
         )
 
     def _register_skills(self):

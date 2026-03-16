@@ -60,6 +60,8 @@ class HealthResponse(BaseModel):
     ros_connected: bool
     cosmos_available: bool
     ollama_available: bool = False
+    cosmos_2b_available: bool = False
+    cosmos_8b_available: bool = False
 
 
 class PlanResponse(BaseModel):

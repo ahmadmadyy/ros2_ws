@@ -66,41 +66,68 @@ def create_app(node: AgentNode) -> FastAPI:
 
     @app.get("/api/v1/health", response_model=HealthResponse)
     async def health():
-        cosmos_ok = await _node.cosmos.is_available()
+        cosmos_2b_ok, cosmos_8b_ok = await asyncio.gather(
+            _node.cosmos_2b.is_available(),
+            _node.cosmos_8b.is_available(),
+        )
         ros_ok = _node.get_current_joint_state() is not None
         ollama_ok = await _node.ollama.is_available()
         return HealthResponse(
             status="ok",
             ros_connected=ros_ok,
-            cosmos_available=cosmos_ok,
+            cosmos_available=cosmos_2b_ok and cosmos_8b_ok,
             ollama_available=ollama_ok,
+            cosmos_2b_available=cosmos_2b_ok,
+            cosmos_8b_available=cosmos_8b_ok,
         )
 
     # ---- Cosmos Model Info / Switch ----
 
     @app.get("/api/v1/model")
     async def get_model_info():
-        served = await _node.cosmos.get_served_model()
+        served_2b, served_8b = await asyncio.gather(
+            _node.cosmos_2b.get_served_model(),
+            _node.cosmos_8b.get_served_model(),
+        )
         return {
-            "configured_model": _node.cosmos.model,
-            "served_model": served,
-            "cosmos_url": _node.cosmos.base_url,
-            "available": served is not None,
+            "cosmos_2b": {
+                "configured_model": _node.cosmos_2b.model,
+                "served_model": served_2b,
+                "cosmos_url": _node.cosmos_2b.base_url,
+                "available": served_2b is not None,
+            },
+            "cosmos_8b": {
+                "configured_model": _node.cosmos_8b.model,
+                "served_model": served_8b,
+                "cosmos_url": _node.cosmos_8b.base_url,
+                "available": served_8b is not None,
+            },
         }
 
     @app.post("/api/v1/model")
-    async def switch_model(model: str = None, cosmos_url: str = None):
-        """Switch the Cosmos model or URL at runtime (vLLM server must be serving the new model)."""
+    async def switch_model(
+        model: str = None,
+        cosmos_url: str = None,
+        model_8b: str = None,
+        cosmos_8b_url: str = None,
+    ):
+        """Switch Cosmos model(s) or URL(s) at runtime."""
         if model:
-            _node.cosmos.model = model
+            _node.cosmos_2b.model = model
         if cosmos_url:
-            _node.cosmos._base_url = cosmos_url.rstrip('/')
-        served = await _node.cosmos.get_served_model()
+            _node.cosmos_2b._base_url = cosmos_url.rstrip('/')
+        if model_8b:
+            _node.cosmos_8b.model = model_8b
+        if cosmos_8b_url:
+            _node.cosmos_8b._base_url = cosmos_8b_url.rstrip('/')
+        served_2b, served_8b = await asyncio.gather(
+            _node.cosmos_2b.get_served_model(),
+            _node.cosmos_8b.get_served_model(),
+        )
         return {
-            "configured_model": _node.cosmos.model,
-            "served_model": served,
-            "cosmos_url": _node.cosmos.base_url,
-            "message": "Updated. Make sure your vLLM server is serving this model.",
+            "cosmos_2b": {"configured_model": _node.cosmos_2b.model, "served_model": served_2b},
+            "cosmos_8b": {"configured_model": _node.cosmos_8b.model, "served_model": served_8b},
+            "message": "Updated. Make sure vLLM instances are serving the configured models.",
         }
 
     # ---- Robot State ----

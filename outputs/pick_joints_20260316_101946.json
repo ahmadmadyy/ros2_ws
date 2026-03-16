@@ -1,0 +1,72 @@
+[
+  {
+    "phase": "home",
+    "joints": [
+      0.0,
+      -1.57,
+      0.0,
+      -1.57,
+      0.0,
+      0.0
+    ],
+    "gripper": 0.0,
+    "velocity_scaling": 0.3,
+    "note": "Home position, gripper open."
+  },
+  {
+    "phase": "approach_screwdriver",
+    "joints": [
+      0.0,
+      -1.57,
+      0.0,
+      -1.57,
+      0.0,
+      0.0
+    ],
+    "gripper": 0.0,
+    "velocity_scaling": 0.3,
+    "note": "Above screwdriver, gripper open."
+  },
+  {
+    "phase": "descend_to_grasp",
+    "joints": [
+      0.0,
+      -1.57,
+      0.0,
+      -1.57,
+      0.0,
+      0.0
+    ],
+    "gripper": 0.0,
+    "velocity_scaling": 0.1,
+    "note": "At grasp height (tool0 z=0.26m), gripper open."
+  },
+  {
+    "phase": "close_gripper",
+    "joints": [
+      0.0,
+      -1.57,
+      0.0,
+      -1.57,
+      0.0,
+      0.0
+    ],
+    "gripper": 0.0,
+    "velocity_scaling": 0.1,
+    "note": "Gripper closed on screwdriver (arm stays put)."
+  },
+  {
+    "phase": "retreat_upward",
+    "joints": [
+      0.0,
+      -1.57,
+      0.0,
+      -1.57,
+      0.0,
+      0.0
+    ],
+    "gripper": 0.0,
+    "velocity_scaling": 0.3,
+    "note": "Lifted up with screwdriver secured, gripper closed."
+  }
+]
