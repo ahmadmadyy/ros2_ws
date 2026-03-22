@@ -506,6 +506,44 @@ class MoveItClient:
             self._node.get_logger().error(f"Failed to attach '{object_id}' to '{link_name}'")
         return ok
 
+    def detach_object(self, object_id: str) -> bool:
+        """Detach a previously attached collision object from the robot.
+
+        Sends a REMOVE operation on the AttachedCollisionObject, which moves
+        the object back into the world collision objects so the planner can
+        avoid it again.
+        """
+        from moveit_msgs.srv import ApplyPlanningScene
+        from moveit_msgs.msg import (
+            PlanningScene,
+            AttachedCollisionObject,
+            CollisionObject,
+        )
+
+        scene = PlanningScene()
+        scene.is_diff = True
+
+        aco = AttachedCollisionObject()
+        aco.object.id = object_id
+        aco.object.operation = CollisionObject.REMOVE
+        scene.robot_state.attached_collision_objects.append(aco)
+        scene.robot_state.is_diff = True
+
+        client = self._node.create_client(ApplyPlanningScene, '/apply_planning_scene')
+        if not client.wait_for_service(timeout_sec=5.0):
+            self._node.get_logger().error('detach_object: /apply_planning_scene not available')
+            return False
+
+        req = ApplyPlanningScene.Request()
+        req.scene = scene
+        result = _wait_for_future(client.call_async(req), timeout_sec=5.0)
+        ok = result is not None and result.success
+        if ok:
+            self._node.get_logger().info(f"Detached '{object_id}' from robot")
+        else:
+            self._node.get_logger().error(f"Failed to detach '{object_id}' from robot")
+        return ok
+
     def ik(
         self,
         pose: Pose,

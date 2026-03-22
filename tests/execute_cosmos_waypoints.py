@@ -465,8 +465,16 @@ def execute_waypoints(waypoints: list[dict], dry_run: bool = False):
                 time.sleep(0.3)
                 continue
 
-            # Gripper-only open phase
+            # Gripper-only open phase — return screwdriver to holder first
             if phase_key in GRIPPER_OPEN_PHASES:
+                if screwdriver_attached:
+                    ok = ik_and_move(moveit, approach_pose, 0.3,
+                                     [_last_joints[0], PICK_SEED, HOME_JOINTS])
+                    print(f"         → holder approach {'OK' if ok else 'FAILED'}")
+                    if ok:
+                        ok = ik_and_move(moveit, grasp_pose, 0.2,
+                                         [_last_joints[0], PICK_SEED])
+                        print(f"         → lower to holder {'OK' if ok else 'FAILED'}")
                 ok = gripper_client.open()
                 prev_gripper = 0.0
                 elapsed = time.monotonic() - t0
@@ -474,6 +482,13 @@ def execute_waypoints(waypoints: list[dict], dry_run: bool = False):
                 if not ok:
                     all_ok = False
                     break
+                if screwdriver_attached:
+                    moveit.detach_object("screwdriver")
+                    screwdriver_attached = False
+                    print("         → screwdriver detached")
+                    ik_and_move(moveit, retreat_pose, 0.3,
+                                [_last_joints[0], PICK_SEED, HOME_JOINTS])
+                    print("         → retreated from holder")
                 time.sleep(0.3)
                 continue
 

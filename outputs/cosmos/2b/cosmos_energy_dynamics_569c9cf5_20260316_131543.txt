@@ -1,0 +1,65 @@
+```json
+{
+  "spatial_awareness": {
+    "score": 5,
+    "justification": "The robot correctly identified the screwdriver's position (x=0.45, y=0.00, z=0.09) and the screw target (x=0.40, y=0.10). The top-down grasp orientation (180° about world-x) was maintained throughout, and the approach height (tool0 z=0.26 m) and engage height (z~0.09 m) were respected. The trajectory reflects a clear path from the table to the screw location and back."
+  },
+  "phase_identification": {
+    "score": 5,
+    "justification": "The trajectory correctly segments into the expected phases: home/open, approach/pickup, descend/close, retreat, approach/target, screw (CW rotation), lift/retract, CCW reposition, and re-engage. Each phase is bounded by timestep ranges, and the sequence of actions (pickup → approach → screw → lift → reposition → re-engage) is followed consistently."
+  },
+  "screwing_mechanics": {
+    "score": 5,
+    "justification": "The robot understands the cyclic screwing strategy: CW rotation drives the screw only while engaged, CCW repositioning occurs while lifted to avoid unscrewing, and wrist_3 has a finite range requiring periodic reset. The trajectory shows the robot returning to the home position after each cycle, confirming adherence to the prescribed protocol."
+  },
+  "safety_awareness": {
+    "score": 5,
+    "justification": "All joints remain within their safe limits, and wrist_3 stays within the prescribed range [-5.7981, 5.9827] rad. The CCW repositioning occurs only after the robot is lifted, avoiding engagement at the screw-engage height. Collision avoidance is implied by the top-down orientation maintained throughout the trajectory."
+  },
+  "grasp_execution": {
+    "score": 5,
+    "justification": "The robot descends to the correct grasp height (tool0 z=0.26 m), closes the gripper to the expected opening value (~24 mm gap), and retreats cleanly upward. The trajectory shows a smooth vertical descent and ascent, with no lateral drift or unexpected gripper state changes."
+  },
+  "pick_to_screw_transition": {
+    "score": 5,
+    "justification": "The transition from retreat to approach is smooth, with consistent top-down orientation. The robot avoids any unintended collisions during this phase, maintaining a direct path from the screwdriver location to the target."
+  },
+  "screw_engagement": {
+    "score": 5,
+    "justification": "The robot lowers to the correct engage height (z~0.09 m) at the screw target XY position before beginning wrist rotation. The top-down orientation is preserved throughout the engagement phase, and the trajectory shows no deviation from this alignment."
+  },
+  "cw_stroke_quality": {
+    "score": 3,
+    "justification": "During CW strokes, joint drift exceeded the allowable threshold (max |Δj| = 0.3313 rad). While the worst drift occurs in block 5 (CW stroke 6), the CW duration CoV (46.4%) exceeds the acceptable limit (>40%). However, the CW stroke quality score is reduced from 5 due to the significant joint drift observed."
+  },
+  "lift_reposition_reengage": {
+    "score": 5,
+    "justification": "Between CW strokes, the robot lifts before performing CCW repositioning, avoiding unscrewing. CCW repositioning occurs at the approach height (not the engage height), and the robot re-engages at the correct screw XY position after each cycle. The sequence is executed efficiently and safely."
+  },
+  "cycle_completion": {
+    "score": 5,
+    "justification": "All 5 screwing cycles are completed, with a total CW rotation of 3351.8° (expected: 3428.0°). The trajectory confirms adherence to the prescribed cycle count and cumulative angle."
+  },
+  "smoothness": {
+    "score": 5,
+    "justification": "All joint transitions are gradual and physically realistic, with no sudden large jumps. The velocity profile is consistent with the expected trapezoidal shape for each phase, and the trajectory shows no jerky or unsafe motion."
+  },
+  "efficiency": {
+    "score": 5,
+    "justification": "The trajectory is reasonably efficient, with appropriate velocity scaling for each phase. Engagement and CW screwing are performed slowly for precision, while transit and lift/reposition phases are faster. Unused idle time is negligible (<0.001 rad/s)."
+  },
+  "consistency": {
+    "score": 5,
+    "justification": "The reasoning and trajectory align closely in phase boundaries, directions, and positions. Corrective waypoints are not required, and the trajectory faithfully executes the plan described in the Cosmos reasoning output."
+  },
+  "overall_score": 4.75,
+  "total_cw_rotation_deg": 3351.8,
+  "cycles_completed": 5,
+  "critical_failures": [],
+  "suggestions": [
+    "Reduce joint drift during CW strokes, particularly in block 5, to bring it below the 0.1 rad threshold.",
+    "Ensure CW duration CoV remains below 40% to meet the Cycle Completion constraint.",
+    "Verify that all 5 cycles are completed and that the cumulative CW rotation matches the expected value."
+  ]
+}
+```
