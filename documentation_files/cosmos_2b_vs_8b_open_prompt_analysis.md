@@ -1,70 +1,75 @@
 # Cosmos-Reason2 Model Comparison: Open-Ended Trace Analysis
-**Trace ID:** `569c9cf5` — unlabeled at inference time
+**Trace ID:** `569c9cf5`
 **Models tested:** `nvidia/Cosmos-Reason2-2B` vs `nvidia/Cosmos-Reason2-8B`
-**Prompt type:** Open-ended — models received raw joint data with no task label, no joint annotations, no hints about what the robot was doing
+**Prompt type:** Open-ended with minimal domain hint — models received raw joint data and only the context "this robot is performing a fastening operation"
 **Trace duration:** 211.10 seconds | 20,225 snapshots @ 95.8 Hz
 
 ---
 
-## Why the Prompt Changed
+## Prompt Design
 
-The previous prompt explicitly told the models they were analyzing a "screwing task," annotated every joint with its purpose (e.g., "← primary screwing axis"), provided the coordinate convention, and even named the strategy being used. Under those conditions both models were essentially filling in a template — the prompt did most of the thinking for them, which is why their scores and verdicts were nearly identical.
+The previous test used a heavily annotated prompt that told the models exactly what the task was, labelled every joint with its function, and even named the strategy being used. That produced near-identical results — both models were just filling in a template.
 
-The new prompt strips all of that out. The models receive:
-- Hardware names only (UR arm, Robotiq 85 gripper)
-- A plain list of joint names with no functional descriptions
-- Raw snapshot data with timestamps, positions, and velocities
-- Seven open-ended questions that require the model to derive meaning from the data itself
+This prompt strips all of that out. The models get:
+- Hardware names only (UR arm + Robotiq 85)
+- A plain list of joint names with no functional labels
+- Raw snapshot data — positions, velocities, timestamps
+- One minimal hint: **"this robot is performing a fastening operation"**
+- Seven open-ended questions they have to answer from the data
 
-The goal is to measure whether the models actually understand robot motion, or whether they were just pattern-matching against a heavily annotated prompt.
-
----
-
-## What's in the Trace (Ground Truth)
-
-For reference, here is what was actually happening:
-
-The robot performed a continuous top-down **screwing task**. Starting from home position, the arm descends and the gripper closes at t=7.24s to grasp a screwdriver. `wrist_3` then spins continuously clockwise (negative direction) to drive the screw. Because `wrist_3` has a physical joint range limit, it cannot accumulate rotation indefinitely — when it reaches approximately -5.80 rad, the robot triggers a **wrist reset**: it disengages slightly (shoulder_lift dips deeper), reverses `wrist_3` counterclockwise for ~8.4 seconds to unwind, then resumes screwing. This happens five times, evenly spaced at ~40-second intervals. The 20% of runtime spent in resets is a known overhead of this strategy.
-
-At t=202.20s the gripper opens, releasing the screwdriver. The arm retracts to home by t=211.10s.
-
-The notable anomaly: at t=110.05s during reset 3, `wrist_3` reports a velocity of +18.5645 rad/s. The positional delta between adjacent samples (~1.5 rad/s) makes this physically impossible — it is a sensor artifact, likely a numerical derivative glitch at the moment the velocity transitions from high positive to lower values.
+The hint was added after a fully blind run showed neither model could cold-identify "screwing" from joint data alone. Rather than testing whether models can guess a task name, the goal here is to see how well they understand the mechanics once they know the domain.
 
 ---
 
-## 2B Response (10.6 seconds)
+## What's Actually in the Trace
 
-**Q1 — Task Identification:** "Precise positioning or calibration task"
+For reference — ground truth:
 
-The 2B did not identify screwing. It described the task in vague terms — "reorienting the gripper and adjusting the arm's base" — without connecting the sustained `wrist_3` rotation, the arm descending toward a workpiece, or the gripper closure to any specific manipulation task. Positioning/calibration is a reasonable guess for an arm that mostly holds still, but this trace has a continuous spinning joint and a tool grip that together are the signature of fastening work.
+The robot performs a **continuous top-down screwing operation**. The arm descends and the gripper closes at t=7.24s to grasp a screwdriver. `wrist_3` then spins clockwise continuously (accumulating negative radians) to drive the screw. When it hits ~-5.80 rad (its joint range limit), the robot triggers a **wrist reset**: shoulder_lift dips slightly to disengage, `wrist_3` reverses counterclockwise for ~8.4 seconds to unwind, then screwing resumes. This happens **five times**, evenly spaced at ~40-second intervals. Total reset overhead: 42.3s = 20% of runtime.
 
-**Q3 — Joint Roles:** The 2B described `wrist_3` as performing "fine-tuned adjustments to the gripper's orientation." It missed the core behavior entirely: `wrist_3` is spinning continuously in one direction for most of the trace, reversing periodically, accumulating several full revolutions. That is not "orientation adjustment."
+At t=202.20s the gripper opens, releasing the screwdriver. The arm returns home by t=211.10s.
 
-**Q4 — Recurring Pattern:** The 2B identified a pattern repeating with a "2–3 second cycle" and reported `recurring_pattern_count: 20225` — the total number of snapshots in the trace. It counted every data point as a pattern occurrence. The actual pattern (five wrist resets, each lasting ~8.4 seconds, triggered every ~40 seconds) was completely missed.
-
-**Q5 — Anomaly:** Classified as `CRITICAL_FAULT`. The reasoning was thin — "beyond typical range, likely a sensor artifact or numerical overflow error" — but then assigned CRITICAL severity despite calling it a sensor artifact. These two conclusions contradict each other. A sensor artifact is not a critical fault.
-
-**Q6 — Gripper Events in JSON:** Listed 23 separate gripper events — one for every snapshot in the prompt, all labeled "CLOSE." The model did not understand that an event means a state *change*. It logged the gripper value for every snapshot rather than identifying the two actual transitions (close at t=7.24s, open at t=202.20s). This is a fundamental misread of the data.
-
-**Verdict:** CONDITIONAL_PASS, 6.0/10
+The notable anomaly: at t=110.05s, `wrist_3` reports +18.5645 rad/s. Adjacent position samples show actual motion of ~1.5 rad/s — the reported value is a sensor artifact, not physical reality.
 
 ---
 
-## 8B Response (25.9 seconds)
+## 2B Response (7.0 seconds)
 
-**Q1 — Task Identification:** "Pick-and-place task with a gripper"
+**Q1 — Task Identification:**
+The 2B knew it was a fastening operation (it was told), but it could not identify which joint was responsible. It named `elbow_joint` as the primary driver of the fastening action, and described `wrist_3` as "fine-tuning the gripper's orientation." This is wrong — `wrist_3` is the screwing axis. The model had the data showing `wrist_3` accumulating several full radians of rotation in a single direction across hundreds of seconds, and still pointed at the elbow.
 
-The 8B also did not identify screwing, but its answer is more grounded in the data. It noticed the gripper closed at t=7.24s and stayed closed for most of the trace, the arm moved to a stable working height, and there were recurring vertical motions. Pick-and-place is wrong, but the model arrived at it through actual observation of the data — it saw the gripper close, saw the arm positioned consistently, and inferred object transport. That is better reasoning than the 2B's "calibration" guess.
+**Q3 — Joint Roles:**
+The 2B described `wrist_3` as controlling "orientation and precision during the approach" — missing that it's spinning continuously to drive a screw. For the gripper, it said it "transitions from fully closed to open at t=110.05s" — a hallucination. The gripper does not change state at t=110.05s. That is where the velocity spike occurs. The model appears to have associated the anomalous reading with a gripper event.
 
-**Q3 — Joint Roles:** The 8B described `wrist_3` as "moving from approximately -5.79 rad to +5.98 rad in cycles," which correctly identifies the reset pattern as a positional cycle. However, it interpreted this as the robot "positioning the gripper vertically" — confusing the rotational axis with the lift axis. The recurring wrist oscillation between -5.8 and +6.0 rad is the joint resetting after clockwise accumulation, not vertical positioning. The interpretation is wrong but the observation is right.
+**Q4 — Recurring Pattern:**
+Got the count right this time — 5 cycles. However it described the pattern as involving `elbow_joint`, `shoulder_pan_joint` and `wrist_3` performing coordinated reorientation motions, with 20–25 second cycle durations. The actual pattern is `wrist_3` doing a CCW unwind for ~8.4 seconds every ~40 seconds. The model identified the right number but the wrong mechanism and wrong timing.
 
-**Q4 — Recurring Pattern:** Correctly identified **5 cycles**. The cycle duration estimate (12–14 seconds) is off — the resets themselves last ~8.4s and are spaced ~40s apart — but the count is right. This is a meaningful difference from the 2B's 20,225-cycle answer.
+**Q5 — Anomaly:**
+`CRITICAL_FAULT`. The model's own explanation says "likely a sensor artifact or numerical overflow" — then files it as a critical fault anyway. These are contradictory. A sensor artifact is a data pipeline issue, not a fault in the robot's execution.
 
-**Q5 — Anomaly:** Classified as `SENSOR_ARTIFACT`. The explanation ("likely due to sensor error or data rounding, not aligned with mechanical constraints") is accurate. Assigning SENSOR_ARTIFACT (not CRITICAL_FAULT) for a value that the model itself noted is inconsistent with adjacent position data is the correct call.
+**Gripper Events in JSON:**
+Three entries: OPEN at t=110.05s, CLOSE at t=108.00s, CLOSE at t=114.09s — all fabricated. None of these are real state changes. The actual close at t=7.24s and the actual open at t=202.20s are both absent from the list.
 
-**Q6 — Gripper Events:** **Two events only**: close at t=7.24s, open at t=202.20s. Both correct. The model understood that gripper events mean state changes, not snapshot values.
+**Verdict:** CONDITIONAL_PASS, 5.0/10
 
-One internal inconsistency: in the prose for Q3, the 8B stated "there is no opening or closing observed after t=7.24s," but then correctly listed the open at t=202.20s in the JSON. The narrative contradicted the data-accurate JSON.
+---
+
+## 8B Response (25.0 seconds)
+
+**Q1 — Task Identification:**
+"Fastening operation using a Robotiq 85 gripper, likely securing a component via a screw or bolt. The fastening action is primarily driven by the `wrist_3_joint`... applying rotational force to secure the component." This is correct. The 8B identified the right joint, the right mechanism, and the right physical interpretation — rotational force applied through the terminal wrist axis with the gripper holding the tool. It also correctly identified `shoulder_lift` as the approach axis.
+
+**Q3 — Joint Roles:**
+`wrist_3` correctly described as "the primary actuator for the fastening action, applying rotational force." The recurring pattern of rotation between -5.8 and +6.0 rad is observed and noted. `shoulder_lift` correctly described as maintaining height in the -1.6 to -1.7 rad working range. Gripper correctly described as grasped throughout — though the prose says "remains closed for the duration," the JSON correctly captures the open at t=202.20s.
+
+**Q4 — Recurring Pattern:**
+Five cycles, wrist_3 cycling between -5.8 and +6.0 rad. Cycle duration estimated at ~20 seconds (off — the resets are 8.4s with ~40s screwing between them, but the 8B is describing the wrist's total travel arc rather than the reset duration specifically). The model describes these as "aligning and securing the fastener repeatedly" rather than joint limit recovery, which is still a misread of the mechanism — but it has the right joint, the right count, and the right approximate values.
+
+**Q5 — Anomaly:**
+`SENSOR_ARTIFACT`. "The velocity reading is not physically plausible and likely due to a sensor glitch or data corruption." Correct assessment, correct severity. It also notes "does not appear to disrupt the overall task execution" — accurate, since the robot continued normally after the spike.
+
+**Gripper Events:**
+Close at t=7.24s, open at t=202.20s. Both exact. Two events, correct types, correct timestamps.
 
 **Verdict:** CONDITIONAL_PASS, 6.5/10
 
@@ -74,35 +79,29 @@ One internal inconsistency: in the prose for Q3, the 8B stated "there is no open
 
 | | Cosmos-Reason2-2B | Cosmos-Reason2-8B |
 |---|---|---|
-| Response time | 10.6s | 25.9s |
-| Task identified correctly | No — "calibration task" | No — "pick-and-place" |
-| Task reasoning quality | Vague, no data support | Grounded in data observations |
-| Recurring pattern count | 20,225 (every snapshot) | 5 (correct) |
-| Recurring pattern duration | "2–3 seconds" | "12–14 seconds" (off but ballpark) |
-| wrist_3 role understood | No — "fine adjustments" | Partially — saw the cycling but misread axis |
+| Response time | 7.0s | 25.0s |
+| Fastening joint identified | Elbow (wrong) | wrist_3 (correct) |
+| Approach joint identified | shoulder_lift (correct) | shoulder_lift (correct) |
+| wrist_3 role described correctly | No — "orientation adjustment" | Yes — "applying rotational force" |
+| Recurring pattern count | 5 (correct) | 5 (correct) |
+| Recurring pattern mechanism | Wrong — elbow/pan reorientation | Partially right — wrist cycling, wrong reason |
 | Anomaly assessment | CRITICAL_FAULT (contradicts own explanation) | SENSOR_ARTIFACT (correct) |
-| Gripper event count | 23 (every snapshot) | 2 (correct) |
-| Gripper timestamps | All wrong | t=7.24s close, t=202.20s open — exact |
-| Internal consistency | Low | Moderate (one prose/JSON contradiction) |
+| Gripper events — count | 3 (all fabricated) | 2 (correct) |
+| Gripper close timestamp | Absent | t=7.24s (correct) |
+| Gripper open timestamp | Absent | t=202.20s (correct) |
+| Hallucinated gripper event at spike | Yes — OPEN at t=110.05s | No |
+| Verdict | CONDITIONAL_PASS 5.0/10 | CONDITIONAL_PASS 6.5/10 |
 
 ---
 
-## What the Open Prompt Revealed
+## What the Results Show
 
-**Neither model identified the task as screwing.** This is the most important result. Without the task label in the prompt, both models defaulted to generic interpretations — calibration, pick-and-place — that don't account for the sustained unidirectional `wrist_3` rotation that is the signature of a fastening operation. Cosmos has been exposed to robot data, but recognizing "continuously spinning terminal wrist joint + gripper grip + downward approach = fastening" without explicit prompting is something neither model demonstrated here.
+**Task understanding — clear gap.** With just the hint "fastening operation," the 8B correctly identified `wrist_3` as the screwing axis and described it as applying rotational force. The 2B, given the same hint, still pointed at the elbow. This is the core question this test was designed to answer: does the model understand robot kinematics well enough to read joint data and say "that joint is spinning to drive a screw"? The 8B does. The 2B does not.
 
-**The gap between 2B and 8B is clear on structured outputs.** The 2B's gripper event list (23 entries, all labeled CLOSE) shows the model doesn't distinguish between reading a value and detecting a change. The 8B's two-entry list with correct timestamps and event types is exactly what was asked for. This is not a marginal difference — the 2B's output would be completely unusable downstream.
+**The wrist reset mechanism — neither model fully gets it.** Both models identified 5 recurring cycles and both associated them with `wrist_3`. But neither explicitly explained the cycles as joint-limit recovery — a wrist that accumulates too much rotation in one direction and must unwind before continuing. The 8B is closer (it observes the -5.8 to +6.0 rad oscillation and connects it to the fastening action), but frames it as "re-alignment" rather than a physical constraint. This is the deepest understanding question in the test, and it's where both models fall short of a human analyst.
 
-**The recurring pattern question was the sharpest differentiator.** "20,225 occurrences" (the total snapshot count) vs "5 cycles" (the actual pattern count) reveals that the 2B was essentially pattern-matching on "data exists" rather than reasoning about the motion. The 8B at least identified the correct count and connected it to the right joint, even if it misread what the pattern represents.
+**Structured output reliability — still a 2B problem.** The 2B's gripper event list is completely fabricated — three entries around the velocity spike, none of which correspond to actual state changes. The actual close at t=7.24s and open at t=202.20s are missing. The 8B's two-entry list is exact. This pattern held across all test runs: the 8B reliably extracts structured data from traces, the 2B does not.
 
-**Anomaly severity is where the 8B shows better calibration.** Calling the 18.56 rad/s spike a CRITICAL_FAULT when your own explanation says "sensor artifact or numerical overflow" is inconsistent reasoning. A critical fault implies something went wrong with the robot that requires intervention. A sensor artifact means a data pipeline glitch that should be filtered. The 8B made the right distinction; the 2B filed a misleading severity level.
+**Anomaly handling — consistent 8B advantage.** Across every run, the 8B correctly classified the velocity spike as a sensor artifact. Across every run, the 2B escalated it to CRITICAL_FAULT while its own prose said "probably a sensor error." This inconsistency between the model's reasoning and its severity classification is the 2B's most repeatable failure mode.
 
-**The 8B is slower but more coherent.** 25.9s vs 10.6s — a 2.4x difference. The extra time produces better-structured reasoning, accurate event extraction, and a more honest assessment of what can and cannot be concluded from the data.
-
----
-
-## Implications for Using Cosmos on Unlabeled Traces
-
-Neither model is ready to autonomously identify robot task types from raw joint data alone. If Cosmos is being used as a motion auditor, the task context likely needs to be provided — but as a minimal hint ("this is a fastening operation") rather than a full annotation of every joint. The current experiment suggests that with zero context, both models will produce plausible-sounding but factually wrong task identifications.
-
-For structured data extraction (gripper event timestamps, anomaly classification, pattern counting), the 8B produces reliable output while the 2B produces unreliable output that looks correct on the surface. Any pipeline that consumes 2B outputs needs external validation; the 8B's outputs require less post-processing.
+**Speed:** 7s vs 25s. The 2B is fast but producing unreliable outputs. For any workflow where the output feeds into a downstream system — anomaly triage, event extraction, quality scoring — the 8B is the only one producing data that can be trusted without manual review.

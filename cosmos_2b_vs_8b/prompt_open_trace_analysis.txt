@@ -1,4 +1,4 @@
-You are analyzing a joint-state recording from a real robot arm deployment. You have not been told what the robot was doing. Your job is to read the data, figure it out, and answer the questions below.
+You are analyzing a joint-state recording from a real robot arm deployment. Your job is to read the data and answer the questions below.
 
 ---
 
@@ -6,6 +6,7 @@ You are analyzing a joint-state recording from a real robot arm deployment. You 
 
 - **Arm**: Universal Robots 6-DOF (UR-series)
 - **End-effector**: Robotiq 85 parallel gripper
+- **Task context:** This robot is performing a fastening operation. No further details about the execution are provided.
 
 ### Joint names (in order, indices 0–11):
 ```
@@ -251,7 +252,7 @@ Answer the following questions in order. Be specific and ground every claim in t
 ---
 
 ### Q1 — Task Identification
-What task is this robot performing? Do not assume — derive your answer from the joint behavior you observe. Explain which joints gave it away and why.
+You know this is a fastening operation. What specific type of fastening is it, and what technique is the robot using to execute it? Identify which joint is responsible for the fastening action, which controls the approach, and how you know — derive your answer from the joint behavior, not from assumptions.
 
 ### Q2 — Application Domain
 What type of industrial or robotic application does this execution belong to? What does the hardware profile (UR arm + Robotiq 85 gripper) combined with the motion pattern tell you about the deployment context?
