@@ -1,5 +1,11 @@
 You are analyzing a joint-state recording from a real robot arm deployment. Your job is to read the data and answer the questions below.
 
+**Important instructions:**
+- Before answering each question, explicitly list the data points from the snapshots that support your answer. Show your reasoning first, then state your conclusion.
+- Every claim must be traceable to a specific timestamp and value in the data.
+- Your JSON summary must be fully consistent with your prose answers. Before writing the JSON, re-read your answers above and verify they match.
+- A **gripper event** is ONLY a timestamp where the gripper value **changed** from its previous snapshot. Do not list timestamps where the gripper value stayed the same.
+
 ---
 
 ## Hardware
@@ -24,7 +30,7 @@ You are analyzing a joint-state recording from a real robot arm deployment. Your
 11: wrist_3_joint
 ```
 
-All values are in radians and radians/second. No further context is provided about the task.
+All values are in radians and radians/second.
 
 ---
 
@@ -247,30 +253,80 @@ gripper [idx 3]: 0.0000
 
 ## Your Analysis
 
-Answer the following questions in order. Be specific and ground every claim in the data.
+Answer the following questions in order. For each question: **first list the specific data points that support your answer, then state your conclusion.**
 
 ---
 
 ### Q1 — Task Identification
-You know this is a fastening operation. What specific type of fastening is it, and what technique is the robot using to execute it? Identify which joint is responsible for the fastening action, which controls the approach, and how you know — derive your answer from the joint behavior, not from assumptions.
+You know this is a fastening operation. What specific type of fastening is it, and what technique is the robot using to execute it?
+
+First, fill in this velocity table by scanning every snapshot and writing the single highest absolute velocity value you observe for each joint:
+
+```
+Joint              | Highest |vel| seen across all snapshots | at which timestamp?
+-------------------|------------------------------------------|--------------------
+shoulder_pan       | _______ rad/s                            | t=______s
+shoulder_lift      | _______ rad/s                            | t=______s
+elbow              | _______ rad/s                            | t=______s
+wrist_1            | _______ rad/s                            | t=______s
+wrist_2            | _______ rad/s                            | t=______s
+wrist_3            | _______ rad/s                            | t=______s
+```
+
+Now answer:
+- (a) Which joint in the table above has the highest peak velocity by a clear margin?
+- (b) Is that joint's velocity predominantly negative or positive during the main working phases (ignoring the spike at t=110.05s)? What does continuous rotation in one direction tell you about the fastening technique?
+- (c) Which joint controls the vertical approach — look at which joint's position shifts as the arm descends toward the workpiece between t=0s and t=7.24s.
 
 ### Q2 — Application Domain
 What type of industrial or robotic application does this execution belong to? What does the hardware profile (UR arm + Robotiq 85 gripper) combined with the motion pattern tell you about the deployment context?
 
 ### Q3 — Joint Role Breakdown
-For each of the following joints, describe what it is doing throughout the trace and what purpose that behavior serves in the overall task:
+For each joint below, first quote the specific values from the snapshots that show its behavior, then describe its role:
 - `wrist_3_joint`
 - `shoulder_lift_joint`
 - `gripper [idx 3]`
 
+For the gripper specifically, go through every snapshot in order and fill in this table before answering:
+```
+t=0.00s   | gripper=0.0000 | same as previous? N/A
+t=2.00s   | gripper=______ | same as previous? ___
+t=4.50s   | gripper=______ | same as previous? ___
+t=7.24s   | gripper=______ | same as previous? ___
+t=20.00s  | gripper=______ | same as previous? ___
+t=24.65s  | gripper=______ | same as previous? ___
+t=32.99s  | gripper=______ | same as previous? ___
+t=48.00s  | gripper=______ | same as previous? ___
+t=65.11s  | gripper=______ | same as previous? ___
+t=73.59s  | gripper=______ | same as previous? ___
+t=89.60s  | gripper=______ | same as previous? ___
+t=105.61s | gripper=______ | same as previous? ___
+t=108.00s | gripper=______ | same as previous? ___
+t=110.05s | gripper=______ | same as previous? ___
+t=114.09s | gripper=______ | same as previous? ___
+t=120.00s | gripper=______ | same as previous? ___
+t=145.99s | gripper=______ | same as previous? ___
+t=154.47s | gripper=______ | same as previous? ___
+t=170.00s | gripper=______ | same as previous? ___
+t=186.86s | gripper=______ | same as previous? ___
+t=195.33s | gripper=______ | same as previous? ___
+t=202.20s | gripper=______ | same as previous? ___
+t=211.10s | gripper=______ | same as previous? ___
+```
+Only rows where "same as previous?" = NO are gripper events.
+
 ### Q4 — Recurring Pattern
-There is a clear recurring pattern in this trace that repeats five times. Describe it precisely: what joints are involved, what values they reach, how long each cycle lasts, and why you think the robot is doing this.
+There is a clear recurring pattern in this trace that repeats five times. Describe it precisely:
+- Which joint is primarily involved?
+- What values does it move between in each cycle? (quote the timestamps and values)
+- How long does each cycle last?
+- What do you think is causing the robot to do this repeatedly?
 
 ### Q5 — Anomaly at t=110.05s
 At t=110.05s, `wrist_3` reports a velocity of +18.5645 rad/s. At t=108.00s (two seconds earlier), the same joint was at position -2.8025 rad with velocity +1.5848 rad/s. At t=114.09s (four seconds later), it is at +5.9798 rad.
-- Is the +18.5645 rad/s reading physically plausible?
+- Calculate the average velocity implied by the position change from t=108.00s to t=114.09s. Does this match the +18.5645 rad/s reading?
 - What is the most likely explanation for this reading?
-- What severity would you assign this: critical fault, sensor artifact, or expected behavior?
+- What severity would you assign this: critical fault, sensor artifact, or expected behavior? Your JSON assessment must match your prose explanation.
 
 ### Q6 — Execution Quality
 Rate this execution on a scale of 0–10 and give a PASS / CONDITIONAL PASS / FAIL verdict. Defend your rating by addressing:
@@ -315,7 +371,7 @@ Justification: [3–5 sentences]
 ```json
 {
   "trace_id": "569c9cf5",
-  "task_identified": "<string — what task did you conclude this is?>",
+  "task_identified": "<string>",
   "application_domain": "<string>",
   "verdict": "<PASS | CONDITIONAL_PASS | FAIL>",
   "quality_score": <0.0–10.0>,

@@ -68,7 +68,7 @@ TASK_CONTEXT = dict(
     task_description=(
         "Pick the screwdriver from the table using a top-down grasp, "
         "move to the screw location, and perform continuous wrist-rotation "
-        "screwing cycles (CW to drive screw, lift, CCW to reposition, re-engage)"
+        "screwing cycles (CCW to drive screw, lift, CW to reposition, re-engage)"
     ),
     robot_description="UR5e 6-DOF manipulator with Robotiq 85 parallel gripper",
     screwdriver_position="x=0.45, y=0.00, z=0.09 (centre of shaft)",
@@ -79,7 +79,7 @@ TASK_CONTEXT = dict(
     n_cycles=5,
     wrist3_safe_min=-5.983,
     wrist3_safe_max=5.983,
-    screw_step_rad=-0.785,
+    screw_step_rad=0.785,
 )
 
 # ---------------------------------------------------------------------------
@@ -155,26 +155,26 @@ Lift position (raised {current_lift_height_cm:.0f} cm above engage for CCW repos
 
 ### Current Parameters
 - n_cycles: {n_cycles}
-- cw_step_rad: {screw_step_rad}   (CW rotation per step, negative = clockwise)
-- cw_velocity_scaling: 0.2
+- ccw_step_rad: {screw_step_rad}   (CCW rotation per step, positive = counter-clockwise)
+- ccw_velocity_scaling: 0.2
 - lift_height_m: 0.06
 - lift_velocity_scaling: 0.3
-- ccw_velocity_scaling: 0.5
+- cw_velocity_scaling: 0.5
 - lower_velocity_scaling: 0.15
 - final_lift_velocity_scaling: 0.3
 - return_home_velocity_scaling: 0.3
 
 ### Per-Cycle Pattern (this structure is fixed)
-1. CW rotation (engaged with screw):
-   - From engage joints, step j6 by cw_step_rad each step.
-   - Continue until j6 reaches {wrist3_safe_min} rad.
+1. CCW rotation (engaged with screw — drives the screw in):
+   - From engage joints, step j6 by ccw_step_rad each step.
+   - Continue until j6 reaches {wrist3_safe_max} rad.
    - ONLY j6 changes per step; j1-j5 are locked to engage values.
-2. Lift (disengage tip before CCW):
-   - Move to lift joints (j1-j5 change); j6 stays at its CW-end value.
-3. CCW reposition (while lifted — does NOT unscrew):
-   - Set ONLY j6 = {wrist3_safe_max} rad; j1-j5 stay at lift values.
+2. Lift (disengage tip before CW reset):
+   - Move to lift joints (j1-j5 change); j6 stays at its CCW-end value.
+3. CW reposition (while lifted — does NOT unscrew):
+   - Set ONLY j6 = {wrist3_safe_min} rad; j1-j5 stay at lift values.
 4. Lower to re-engage:
-   - Move back to engage joints; j6 stays at {wrist3_safe_max} rad.
+   - Move back to engage joints; j6 stays at {wrist3_safe_min} rad.
    (Last cycle: final lift instead of lower, then open gripper, then home.)
 
 ## Trajectory Analysis (from Cosmos 2B)
@@ -199,7 +199,7 @@ Output ONLY a JSON object in this exact format:
   "improvements_addressed": ["<specific improvement and why>"],
   "screwing_parameters": {{
     "n_cycles": <int, 1-10>,
-    "cw_step_rad": <float, negative for CW, e.g. -0.785>,
+    "cw_step_rad": <float, positive for CCW, e.g. 0.785>,
     "cw_velocity_scaling": <float, 0.05-1.0>,
     "lift_height_m": <float, 0.02-0.15>,
     "lift_velocity_scaling": <float, 0.05-1.0>,
@@ -219,8 +219,8 @@ IMPORTANT constraints:
 - engage_joints and lift_joints j1-j5 must remain IK-valid for the screw location
 - Keep j1-j5 close to the reference values unless evaluation specifically calls for a different approach
 - j6 in engage_joints/lift_joints is the starting wrist_3 — typically near the reference value
-- cw_step_rad must be negative (clockwise)
-- The code generates all individual CW step waypoints from these parameters automatically
+- cw_step_rad must be positive (counter-clockwise)
+- The code generates all individual CCW step waypoints from these parameters automatically
 """
 
 
@@ -233,10 +233,10 @@ def extract_screw_reference(data: dict) -> dict | None:
 
     Strategy:
       1. Find when the gripper closes (gripper > 0.5) — marks pick complete.
-      2. After gripper close, find the first sustained CW wrist_3 decrease
+      2. After gripper close, find the first sustained CCW wrist_3 increase
          (the actual screwing, not the pick rotation).
       3. The joints at that point are the *engage* configuration.
-      4. After the CW block, find where j0-j4 change (= the lift).
+      4. After the CCW block, find where j0-j4 change (= the lift).
     """
     snaps = data["snapshots"]
     if not snaps:
@@ -259,31 +259,31 @@ def extract_screw_reference(data: dict) -> dict | None:
     if grip_close == 0 and grip[0] <= 0.5:
         return None  # gripper never closes
 
-    # 2. After gripper close, find first sustained CW block using windowed delta
+    # 2. After gripper close, find first sustained CCW block using windowed delta
     window = 100
-    cw_start = None
+    ccw_start = None
     for i in range(grip_close, len(w3) - window):
-        if w3[i + window] - w3[i] < -0.5:
-            cw_start = i
+        if w3[i + window] - w3[i] > 0.5:   # positive = CCW
+            ccw_start = i
             break
-    if cw_start is None:
+    if ccw_start is None:
         return None
 
-    engage = [round(float(v), 4) for v in arm[cw_start]]
+    engage = [round(float(v), 4) for v in arm[ccw_start]]
 
-    # 3. Find end of first CW block: where w3 stops decreasing over a window
-    cw_end = cw_start
-    for i in range(cw_start + window, len(w3) - window):
-        if w3[i + window] - w3[i] > 0.5:  # CCW = lift phase starting
-            cw_end = i
+    # 3. Find end of first CCW block: where w3 stops increasing over a window
+    ccw_end = ccw_start
+    for i in range(ccw_start + window, len(w3) - window):
+        if w3[i + window] - w3[i] < -0.5:  # CW = lift phase starting
+            ccw_end = i
             break
 
-    # 4. Walk back from CCW start to find where j0-j4 first change (= lift)
+    # 4. Walk forward from CW start to find where j0-j4 first change (= lift)
     #    Then read the stabilised lift joints a bit further ahead.
-    lift_idx = cw_end
-    cw_end_j04 = arm[cw_end, :5]
-    for i in range(cw_end, min(cw_end + 500, len(arm))):
-        if np.max(np.abs(arm[i, :5] - cw_end_j04)) > 0.02:
+    lift_idx = ccw_end
+    ccw_end_j04 = arm[ccw_end, :5]
+    for i in range(ccw_end, min(ccw_end + 500, len(arm))):
+        if np.max(np.abs(arm[i, :5] - ccw_end_j04)) > 0.02:
             lift_idx = i
             break
 
@@ -310,14 +310,14 @@ def generate_waypoints_from_params(
     """Build the full screwing waypoint sequence from model-chosen parameters.
 
     The structure mirrors test_screw_continuous.py exactly:
-      Per cycle: CW steps → lift → CCW reposition → lower (or final lift on last).
+      Per cycle: CCW steps → lift → CW reposition → lower (or final lift on last).
       After all cycles: open gripper → return home.
     """
     n_cycles   = int(params.get("n_cycles", 5))
-    cw_step    = float(params.get("cw_step_rad", -0.785))
-    cw_vel     = float(params.get("cw_velocity_scaling", 0.2))
+    ccw_step   = float(params.get("cw_step_rad", 0.785))   # positive = CCW
+    ccw_vel    = float(params.get("cw_velocity_scaling", 0.2))
     lift_vel   = float(params.get("lift_velocity_scaling", 0.3))
-    ccw_vel    = float(params.get("ccw_velocity_scaling", 0.5))
+    cw_vel     = float(params.get("ccw_velocity_scaling", 0.5))
     lower_vel  = float(params.get("lower_velocity_scaling", 0.15))
     final_vel  = float(params.get("final_lift_velocity_scaling", 0.3))
     home_vel   = float(params.get("return_home_velocity_scaling", 0.3))
@@ -329,53 +329,53 @@ def generate_waypoints_from_params(
     cur_engage = list(engage_joints)
 
     for cyc in range(1, n_cycles + 1):
-        # (a) CW rotation — only j6 changes
+        # (a) CCW rotation — only j6 changes
         joints = list(cur_engage)
         step_n = 0
-        while joints[5] + cw_step >= w3_min:
-            joints[5] += cw_step
+        while joints[5] + ccw_step <= w3_max:
+            joints[5] += ccw_step
             step_n += 1
             waypoints.append({
-                "phase": f"CW step {step_n} (cycle {cyc})",
+                "phase": f"CCW step {step_n} (cycle {cyc})",
                 "joints": [round(j, 4) for j in joints],
                 "gripper": 0.57,
-                "velocity_scaling": cw_vel,
-                "note": f"CW rotation, wrist_3={joints[5]:.3f} rad",
+                "velocity_scaling": ccw_vel,
+                "note": f"CCW rotation, wrist_3={joints[5]:.3f} rad",
             })
-        cw_end_w3 = joints[5]
+        ccw_end_w3 = joints[5]
 
         # (b) Lift — j0-j4 change, j6 preserved
         lj = list(lift_joints)
-        lj[5] = cw_end_w3
+        lj[5] = ccw_end_w3
         waypoints.append({
             "phase": f"Lift (cycle {cyc})",
             "joints": [round(j, 4) for j in lj],
             "gripper": 0.57,
             "velocity_scaling": lift_vel,
-            "note": f"Lift to disengage, wrist_3 preserved at {cw_end_w3:.3f} rad",
+            "note": f"Lift to disengage, wrist_3 preserved at {ccw_end_w3:.3f} rad",
         })
 
-        # (c) CCW reposition — only j6 changes
-        ccw = list(lj)
-        ccw[5] = w3_max
+        # (c) CW reposition — only j6 changes
+        cw_reset = list(lj)
+        cw_reset[5] = w3_min
         waypoints.append({
-            "phase": f"CCW reposition (cycle {cyc})",
-            "joints": [round(j, 4) for j in ccw],
+            "phase": f"CW reposition (cycle {cyc})",
+            "joints": [round(j, 4) for j in cw_reset],
             "gripper": 0.57,
-            "velocity_scaling": ccw_vel,
-            "note": f"CCW reset j6 to {w3_max:.3f} rad",
+            "velocity_scaling": cw_vel,
+            "note": f"CW reset j6 to {w3_min:.3f} rad",
         })
 
         # (d) Lower / final lift
         if cyc < n_cycles:
             lo = list(cur_engage)
-            lo[5] = w3_max
+            lo[5] = w3_min
             waypoints.append({
                 "phase": f"Lower to re-engage (cycle {cyc})",
                 "joints": [round(j, 4) for j in lo],
                 "gripper": 0.57,
                 "velocity_scaling": lower_vel,
-                "note": f"Lower back to engage, wrist_3={w3_max:.3f} rad",
+                "note": f"Lower back to engage, wrist_3={w3_min:.3f} rad",
             })
             cur_engage = list(lo)
         else:
@@ -478,10 +478,11 @@ def compute_trajectory_metrics(trajectory_json: str) -> dict[str, str]:
 
     w3 = joints[:, 5]
     dw3 = np.diff(w3)
-    cw_mask  = dw3 < -0.01
+    # CCW (positive) = screwing direction; CW (negative) = reposition direction
     ccw_mask = dw3 > 0.01
-    total_cw_rad  = float(np.sum(np.abs(dw3[cw_mask])))
-    total_ccw_rad = float(np.sum(np.abs(dw3[ccw_mask])))
+    cw_mask  = dw3 < -0.01
+    total_cw_rad  = float(np.sum(np.abs(dw3[ccw_mask])))  # CCW = screwing strokes
+    total_ccw_rad = float(np.sum(np.abs(dw3[cw_mask])))   # CW = repositioning
     total_travel  = total_cw_rad + total_ccw_rad
     screw_eff = total_cw_rad / total_travel * 100 if total_travel > 0 else 0
 
@@ -489,12 +490,12 @@ def compute_trajectory_metrics(trajectory_json: str) -> dict[str, str]:
     expected_cw_rad = TASK_CONTEXT["n_cycles"] * w3_range
     expected_cw_deg = math.degrees(expected_cw_rad)
 
-    # Find CW blocks
+    # Find CCW (screwing) blocks
     in_cw = False
     cw_blocks = []
     block_start = None
     for i in range(len(dw3)):
-        if dw3[i] < -0.01:
+        if dw3[i] > 0.01:   # CCW = screwing
             if not in_cw:
                 block_start = i
                 in_cw = True

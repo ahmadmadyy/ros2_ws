@@ -10,10 +10,10 @@ Sequence:
     1–10. Pick screwdriver top-down, attach, move above screw, lower to engage.
 
   Screw phase — N_CYCLES cycles of:
-    (a) Rotate wrist_3 CW in 45° steps until WRIST3_SAFE_MIN (~-360°).
+    (a) Rotate wrist_3 CCW in 45° steps until WRIST3_SAFE_MAX (~+360°).
     (b) Lift LIFT_H cm straight up — IK uses the CURRENT (rotated) orientation
         so the solver keeps wrist_3 in place and only adjusts the arm height.
-    (c) Rotate ONLY wrist_3 CCW to WRIST3_SAFE_MAX (~+360°) — pure joint move,
+    (c) Rotate ONLY wrist_3 CW to WRIST3_SAFE_MIN (~-360°) — pure joint move,
         no reorientation of the rest of the arm.
     (d) Lower back to engage height [skip on last cycle].
 
@@ -107,7 +107,7 @@ N_CYCLES = 5
 WRIST3_SAFE_MIN = -(2 * math.pi - 0.3)   # ≈ -5.983 rad
 WRIST3_SAFE_MAX =  (2 * math.pi - 0.3)   # ≈ +5.983 rad
 
-SCREW_STEP_RAD = -(math.pi / 4)   # -45° per CW step
+SCREW_STEP_RAD = +(math.pi / 4)   # +45° per CCW step
 
 # Small lift height used to disengage the screwdriver tip between strokes
 LIFT_H = 0.06   # 6 cm
@@ -282,9 +282,9 @@ def main():
         def run_screw_cycles():
             """
             N_CYCLES of:
-              (a) CW wrist_3 rotation to WRIST3_SAFE_MIN  (engaged with screw)
+              (a) CCW wrist_3 rotation to WRIST3_SAFE_MAX  (engaged with screw)
               (b) Small lift  — IK with current rotated orientation keeps wrist_3
-              (c) CCW wrist_3 to WRIST3_SAFE_MAX  — ONLY joint 5 moves
+              (c) CW wrist_3 to WRIST3_SAFE_MIN  — ONLY joint 5 moves
               (d) Lower back to engage height  [skipped on last cycle]
             """
             # Capture the canonical wrist_3 from the initial IK solution.
@@ -298,23 +298,23 @@ def main():
                     f"(start wrist_3={_engage_joints[0][5]:.3f} rad) ---"
                 )
 
-                # ---- (a) CW screwing until lower joint limit ----
-                joints   = list(_engage_joints[0])
-                start_w3 = joints[5]
-                cw_steps = 0
+                # ---- (a) CCW screwing until upper joint limit ----
+                joints    = list(_engage_joints[0])
+                start_w3  = joints[5]
+                ccw_steps = 0
 
-                while joints[5] + SCREW_STEP_RAD >= WRIST3_SAFE_MIN:
+                while joints[5] + SCREW_STEP_RAD <= WRIST3_SAFE_MAX:
                     joints[5] += SCREW_STEP_RAD
                     if not moveit.plan_and_execute_joints(joints, velocity_scaling=0.2):
-                        node.get_logger().error(f"CW step {cw_steps + 1} failed")
+                        node.get_logger().error(f"CCW step {ccw_steps + 1} failed")
                         return False
-                    cw_steps += 1
+                    ccw_steps += 1
                     time.sleep(0.1)
 
-                stroke_rad   = start_w3 - joints[5]
+                stroke_rad   = joints[5] - start_w3
                 total_cw_rad += stroke_rad
                 node.get_logger().info(
-                    f"  CW: {cw_steps} steps × 45°, "
+                    f"  CCW: {ccw_steps} steps × 45°, "
                     f"{math.degrees(stroke_rad):.0f}° this stroke, "
                     f"{math.degrees(total_cw_rad):.0f}° cumulative"
                 )
@@ -333,19 +333,19 @@ def main():
                     node.get_logger().error(f"Lift motion failed (cycle {cycle})")
                     return False
 
-                # ---- (c) CCW rotation — ONLY wrist_3 (joint 5) changes ----
+                # ---- (c) CW rotation — ONLY wrist_3 (joint 5) changes ----
                 ccw_joints    = list(lift_joints)
-                ccw_joints[5] = WRIST3_SAFE_MAX
+                ccw_joints[5] = WRIST3_SAFE_MIN
                 if not moveit.plan_and_execute_joints(ccw_joints, velocity_scaling=0.5):
-                    node.get_logger().error(f"CCW reset failed (cycle {cycle})")
+                    node.get_logger().error(f"CW reset failed (cycle {cycle})")
                     return False
                 node.get_logger().info(
-                    f"  CCW reset → wrist_3={WRIST3_SAFE_MAX:.3f} rad")
+                    f"  CW reset → wrist_3={WRIST3_SAFE_MIN:.3f} rad")
 
                 # ---- (d) Lower to engage / full lift on last cycle ----
                 if cycle < N_CYCLES:
-                    # Orientation at WRIST3_SAFE_MAX — IK keeps wrist_3 near max
-                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
+                    # Orientation at WRIST3_SAFE_MIN — IK keeps wrist_3 near min
+                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MIN)
                     lower_pose  = make_pose(SCREW_X, SCREW_Y, SCREW_TOOL0_Z,
                                             qx, qy, qz, qw)
                     re_engage   = _ik_first(moveit, lower_pose, [ccw_joints, PICK_SEED])
@@ -360,7 +360,7 @@ def main():
                         f"  Lowered: wrist_3={re_engage[5]:.3f} rad")
                 else:
                     # Last cycle: lift fully to approach height for safe home move
-                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
+                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MIN)
                     exit_pose   = make_pose(SCREW_X, SCREW_Y, SCREW_APPROACH_Z,
                                             qx, qy, qz, qw)
                     exit_joints = _ik_first(moveit, exit_pose, [ccw_joints, PICK_SEED])
@@ -408,7 +408,7 @@ def main():
             ("Lower to engage screw (initial)",
              lower_to_engage_initial),
             (f"Continuous screw — {N_CYCLES} cycles "
-             f"(CW to limit → lift → CCW only wrist_3 → lower)",
+             f"(CCW to limit → lift → CW only wrist_3 → lower)",
              run_screw_cycles),
             ("Open gripper — drop screwdriver",
              lambda: gripper.open()),
@@ -424,7 +424,7 @@ def main():
               f"tool0-z={GRASP_Z:.3f} m")
         print(f"  Screw  x={SCREW_X:.2f}  y={SCREW_Y:.2f}  "
               f"tool0-z={SCREW_TOOL0_Z:.3f} m")
-        print(f"  Cycles N={N_CYCLES},  step={math.degrees(abs(SCREW_STEP_RAD)):.0f}°/step CW")
+        print(f"  Cycles N={N_CYCLES},  step={math.degrees(abs(SCREW_STEP_RAD)):.0f}°/step CCW")
         print(f"  wrist_3 range: [{WRIST3_SAFE_MIN:.2f}, {WRIST3_SAFE_MAX:.2f}] rad  "
               f"lift={LIFT_H*100:.0f} cm between strokes")
         print("=" * 66)
