@@ -1,0 +1,81 @@
+**SECTION 1 — TRACE NARRATIVE**
+
+The robot begins in its home position with all joints at neutral values. It then initiates a top-down screwing task by lowering its shoulder lift joint while rotating its wrist axes to position the gripper near the screw. The gripper closes around the screwdriver, and the robot begins rotating its wrist_3 joint clockwise to drive the screw. After a few seconds of screwing, the robot performs a reset by rotating the wrist_3 joint counterclockwise to clear the screw, then resumes screwing. This cycle repeats five times, with each reset involving a counterclockwise unwind of the wrist_3 joint. After the final reset, the robot completes the screwing task and releases the tool by opening the gripper, then retracts to its home position.
+
+**SECTION 2 — PHASE TABLE**
+
+| Phase Name                  | Time Range           | Defining Joints                                                                 | Purpose                                                                 |
+|----------------------------|----------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Home Position              | 0.00s – 2.00s        | All joints at neutral positions, gripper open                                   | Robot starts from a known, safe position                               |
+| Initial Motion             | 2.00s – 4.50s        | Shoulder lift descends, wrist_3 begins clockwise rotation                       | Robot positions itself near the workpiece                              |
+| Arm Descends               | 4.50s – 7.24s        | Shoulder lift continues downward, gripper remains open                          | Robot lowers to the correct height for screwing                        |
+| Gripper Closes             | 7.24s – 20.00s       | Gripper closes to grasp screwdriver, wrist_3 continues clockwise rotation       | Tool is secured and screwing begins                                     |
+| Mid-Screwing Block 1       | 20.00s – 24.65s      | Wrist_3 continues clockwise rotation, gripper closed                           | Screw is being driven into the workpiece                               |
+| Reset 1                    | 24.65s – 32.99s      | Wrist_3 rotates counterclockwise to clear screw, gripper remains closed         | Screw is reset to allow for continued screwing                         |
+| Mid-Screwing Block 2       | 32.99s – 48.00s      | Wrist_3 resumes clockwise rotation, gripper closed                              | Screw is driven further into the workpiece                             |
+| Reset 2                    | 48.00s – 65.11s      | Wrist_3 rotates counterclockwise to clear screw, gripper remains closed         | Screw is reset to allow for continued screwing                         |
+| Mid-Screwing Block 3       | 65.11s – 89.60s      | Wrist_3 continues clockwise rotation, gripper closed                            | Screw is driven further into the workpiece                             |
+| Reset 3                    | 89.60s – 105.61s     | Wrist_3 rotates counterclockwise to clear screw, gripper remains closed         | Screw is reset to allow for continued screwing                         |
+| Mid-Screwing Block 4       | 105.61s – 145.99s    | Wrist_3 continues clockwise rotation, gripper closed                            | Screw is driven further into the workpiece                             |
+| Reset 4                    | 145.99s – 170.00s    | Wrist_3 rotates counterclockwise to clear screw, gripper remains closed         | Screw is reset to allow for continued screwing                         |
+| Mid-Screwing Block 5       | 170.00s – 186.86s    | Wrist_3 continues clockwise rotation, gripper closed                            | Screw is driven further into the workpiece                             |
+| Reset 5                    | 186.86s – 202.20s    | Wrist_3 rotates counterclockwise to clear screw, gripper remains closed         | Screw is reset to allow for continued screwing                         |
+| Tool Release               | 202.20s – 205.00s    | Gripper opens to release screwdriver, robot begins retracting                   | Tool is released and robot prepares to return home                     |
+| Final Retract              | 205.00s – 211.10s    | Robot moves back to home position, all joints return to neutral                 | Robot completes the task and returns to its initial state              |
+
+**SECTION 3 — QUALITY VERDICT**
+
+**VERDICT:** CONDITIONAL PASS (Score: 6.5/10)
+
+The robot successfully completed the screwing task, returning to its home position with the gripper open and all joints at neutral values. The gripper was correctly opened and closed as needed, and the tool was properly released at the end. However, the robot performed five unnecessary reset cycles, each consuming ~8 seconds, totaling ~42 seconds of non-screwing time (20% of the total 211-second duration). This is inefficient and suggests a flawed control strategy. The wrist_3 velocity spike at t=110.05s is likely a sensor artifact and does not reflect real motion. While the screwing itself was completed, the frequent resets and inefficient motion make this a conditional pass rather than a fully optimized execution.
+
+**SECTION 4 — ANOMALY REPORT**
+
+- **[SEVERITY: WARNING]** 110.05s | wrist_3 | Velocity reads +18.5645 rad/s, which is inconsistent with adjacent position readings. This is likely a sensor glitch or data corruption, not a physical reality.
+- **[SEVERITY: CRITICAL]** 24.65s–32.99s, 65.11s–73.59s, 105.61s–114.09s, 145.99s–154.47s, 186.86s–195.33s | wrist_3 | Five reset cycles, each involving a counterclockwise unwind to -5.80 rad. This is wasteful and unnecessary for a top-down screwing task.
+- **[SEVERITY: WARNING]** 24.65s–211.10s | wrist_3 | Total time in reset cycles: 42.3 seconds (20% of total duration). This is excessive and reduces efficiency.
+- **[SEVERITY: INFO]** 20.00s–24.65s, 32.99s–48.00s, 65.11s–89.60s, 105.61s–145.99s, 170.00s–186.86s | wrist_3 | CW screwing occurs in short bursts (1.5s) with pauses (0.4–0.5s) between them. This suggests a control strategy that is not fully optimized for continuous motion.
+
+**SECTION 5 — STRATEGY ASSESSMENT**
+
+The “continuous screw with periodic wrist reset” strategy involves the robot driving the screw in short bursts, then resetting the wrist_3 joint counterclockwise to clear the screw before resuming. This approach is mechanically possible but inefficient, as it requires unnecessary motion and time. It is not ideal for a top-down approach, where continuous screwing would be more natural and efficient. The tradeoff is that the robot avoids potential mechanical issues (e.g., over-tightening) by resetting, but at the cost of time and energy. A better strategy would involve continuous screwing without resets, using precise control to avoid over-rotation.
+
+**SECTION 6 — JSON SUMMARY**
+
+```json
+{
+  "trace_id": "569c9cf5",
+  "overall_verdict": "CONDITIONAL_PASS",
+  "quality_score": 6.5,
+  "total_phases_identified": 12,
+  "reset_cycles_detected": 5,
+  "screwing_efficiency_pct": 80.0,
+  "gripper_events": [
+    {
+      "time_sec": 7.24,
+      "event": "CLOSE",
+      "joint_value": 0.5700
+    },
+    {
+      "time_sec": 202.20,
+      "event": "OPEN",
+      "joint_value": 0.0000
+    }
+  ],
+  "critical_anomalies": [
+    "Five unnecessary reset cycles (20% of total time)",
+    "Wrist_3 velocity spike at t=110.05s (likely sensor artifact)",
+    "Screwing in short bursts with pauses between them"
+  ],
+  "warnings": [
+    "Excessive reset cycles reduce efficiency",
+    "BURST-AND-PAUSE screwing pattern suggests suboptimal control"
+  ],
+  "recommended_improvements": [
+    "Eliminate reset cycles by using continuous screwing",
+    "Improve control to avoid over-rotation",
+    "Investigate and fix sensor glitches"
+  ],
+  "understood_task": true
+}
+```
