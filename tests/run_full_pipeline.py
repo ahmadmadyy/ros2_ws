@@ -85,6 +85,7 @@ ROS_SOURCE = (
     "source /opt/ros/jazzy/setup.bash && "
     "source ~/ros2_ws/install/setup.bash"
 )
+ROBOT_AGENT_SOURCE = WS / "src" / "robot_agent"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -163,7 +164,12 @@ def step0_kill_all() -> None:
     cmds = [
         f"tmux kill-session -t {TMUX} 2>/dev/null || true",
         "tmux kill-session -t robot_stack 2>/dev/null || true",
+        "pkill -9 -f 'bringup.launch.py' 2>/dev/null || true",
+        "pkill -9 -f 'ros2 launch ur5e_robotiq_moveit_config bringup.launch.py' 2>/dev/null || true",
         "pkill -9 -f 'move_group'        2>/dev/null || true",
+        "pkill -9 -f 'robot_state_publisher' 2>/dev/null || true",
+        "pkill -9 -f 'controller_manager' 2>/dev/null || true",
+        "pkill -9 -f 'spawner' 2>/dev/null || true",
         "pkill -9 -f 'ros2_control_node' 2>/dev/null || true",
         "pkill -9 -f 'robot_agent'       2>/dev/null || true",
         "pkill -9 -f 'vllm serve'        2>/dev/null || true",
@@ -227,7 +233,11 @@ def step1_start_services() -> None:
     tmux_new_window("agent")
     tmux_send(
         "agent",
-        f"{ROS_SOURCE} && ros2 run robot_agent robot_agent",
+        (
+            f'export ROBOT_AGENT_MANAGE_VLLM=0 && '
+            f'export PYTHONPATH="{ROBOT_AGENT_SOURCE}:$PYTHONPATH" && '
+            f"{ROS_SOURCE} && python3 -m robot_agent.main"
+        ),
     )
     print(f"  [agent]    tmux window 'agent' started     (port 8080)")
 
@@ -301,7 +311,8 @@ def step3_run_screw_test() -> Path:
         check=False,
     )
     if result.returncode != 0:
-        print(f"  WARNING: test_screw_continuous_cosmos.py exited {result.returncode}")
+        print(f"  ERROR: test_screw_continuous_cosmos.py exited {result.returncode} — aborting pipeline.")
+        sys.exit(result.returncode)
 
     after = set(SCREW_TRACE.glob("screw_continuous_*.json")) if SCREW_TRACE.exists() else set()
     new = sorted(after - before, key=lambda p: p.stat().st_mtime, reverse=True)

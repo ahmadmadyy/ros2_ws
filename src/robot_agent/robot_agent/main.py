@@ -15,6 +15,7 @@ from .app import create_app
 
 _VLLM_READY_TIMEOUT = 300   # seconds to wait for vLLM to become ready
 _VLLM_POLL_INTERVAL = 5     # seconds between health-check polls
+_MANAGE_VLLM_ENV = "ROBOT_AGENT_MANAGE_VLLM"
 
 _VLLM_INSTANCES = [
     {"model": "nvidia/Cosmos-Reason2-2B", "port": 8000, "gpu_util": "0.40"},
@@ -96,9 +97,20 @@ def _start_both_vllm():
 
 
 def main():
-    # Launch Cosmos 2B (port 8000) and Cosmos 8B (port 8001) in parallel,
-    # then block until both are ready before bringing up the ROS2 node.
-    _start_both_vllm()
+    # By default the agent manages its own local vLLM instances. Test harnesses
+    # such as tests/run_full_pipeline.py can disable this and provide external
+    # Cosmos servers instead.
+    manage_vllm = os.getenv(_MANAGE_VLLM_ENV, "1").strip().lower() not in {
+        "0", "false", "no"
+    }
+    if manage_vllm:
+        _start_both_vllm()
+    else:
+        print(
+            f"[robot_agent] Skipping internal vLLM startup because "
+            f"{_MANAGE_VLLM_ENV}={os.getenv(_MANAGE_VLLM_ENV)}",
+            flush=True,
+        )
 
     # ----------------------------------------------------------------
     # Normal robot_agent startup

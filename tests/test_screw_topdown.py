@@ -105,10 +105,10 @@ SCREW_TOOL0_Z = GRASP_Z          # 0.26 m — tip at z=0.0 (table surface)
 SCREW_APPROACH_Z = SCREW_TOOL0_Z + 0.15   # 15 cm safety clearance above
 
 # Screwing motion: 3 full CW turns, 4 steps per turn (90° increments)
-# Clockwise when viewed from above → decrease wrist_3_joint value
+# Clockwise when viewed from above → increase wrist_3_joint value
 SCREW_TURNS     = 3
 STEPS_PER_TURN  = 4
-SCREW_STEP_RAD  = -(2 * math.pi / STEPS_PER_TURN)   # -π/2 per step
+SCREW_STEP_RAD  = +(2 * math.pi / STEPS_PER_TURN)   # +π/2 per step
 
 
 # ---------------------------------------------------------------------------

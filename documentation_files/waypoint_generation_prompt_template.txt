@@ -16,28 +16,28 @@ parameters that address the evaluation feedback.
 Engage position (tool0 at screw, z=0.26 m, top-down orientation):
   {engage_joints}
 
-Lift position (raised {current_lift_height_cm} cm above engage for CW repositioning):
+Lift position (raised {current_lift_height_cm} cm above engage for CCW repositioning):
   {lift_joints}
 
 ### Current Parameters
 - n_cycles: {n_cycles}
-- ccw_step_rad: {screw_step_rad}   (CCW rotation per step, positive = counter-clockwise)
-- ccw_velocity_scaling: 0.2
+- cw_step_rad: {screw_step_rad}   (CW rotation per step, positive = clockwise from above)
+- cw_velocity_scaling: 0.2
 - lift_height_m: 0.06
 - lift_velocity_scaling: 0.3
-- cw_velocity_scaling: 0.5
+- ccw_velocity_scaling: 0.5
 - lower_velocity_scaling: 0.15
 - final_lift_velocity_scaling: 0.3
 - return_home_velocity_scaling: 0.3
 
 ### Per-Cycle Pattern (this structure is fixed)
-1. CCW rotation (engaged with screw — drives the screw in):
-   - From engage joints, step j6 by ccw_step_rad each step.
+1. CW rotation (engaged with screw — drives the screw in):
+   - From engage joints, step j6 by cw_step_rad each step.
    - Continue until j6 reaches {wrist3_safe_max} rad.
    - ONLY j6 changes per step; j1-j5 are locked to engage values.
-2. Lift (disengage tip before CW reset):
-   - Move to lift joints (j1-j5 change); j6 stays at its CCW-end value.
-3. CW reposition (while lifted — does NOT unscrew):
+2. Lift (disengage tip before CCW reset):
+   - Move to lift joints (j1-j5 change); j6 stays at its CW-end value.
+3. CCW reposition (while lifted — does NOT unscrew):
    - Set ONLY j6 = {wrist3_safe_min} rad; j1-j5 stay at lift values.
 4. Lower to re-engage:
    - Move back to engage joints; j6 stays at {wrist3_safe_min} rad.
@@ -53,7 +53,7 @@ Suggestions for improvement:
 
 ## Your Task
 Based on the evaluation feedback, generate an IMPROVED parameter set.
-You may adjust velocities, CCW step size, number of cycles, and lift height.
+You may adjust velocities, CW step size, number of cycles, and lift height.
 You may also adjust the engage/lift joint values (j1-j5) if you believe a different
 approach angle or height would help, but keep them close to the reference unless
 you have a specific reason.
@@ -65,7 +65,7 @@ Output ONLY a JSON object in this exact format:
   "improvements_addressed": ["<specific improvement and why>"],
   "screwing_parameters": {
     "n_cycles": <int, 1-10>,
-    "cw_step_rad": <float, positive for CCW, e.g. 0.785>,
+    "cw_step_rad": <float, positive for CW, e.g. 0.785>,
     "cw_velocity_scaling": <float, 0.05-1.0>,
     "lift_height_m": <float, 0.02-0.15>,
     "lift_velocity_scaling": <float, 0.05-1.0>,
@@ -85,5 +85,5 @@ IMPORTANT constraints:
 - engage_joints and lift_joints j1-j5 must remain IK-valid for the screw location
 - Keep j1-j5 close to the reference values unless evaluation specifically calls for a different approach
 - j6 in engage_joints/lift_joints is the starting wrist_3 — typically near the reference value
-- cw_step_rad must be positive (counter-clockwise)
-- The code generates all individual CCW step waypoints from these parameters automatically
+- cw_step_rad must be positive (clockwise from above with top-down grasp)
+- The code generates all individual CW step waypoints from these parameters automatically

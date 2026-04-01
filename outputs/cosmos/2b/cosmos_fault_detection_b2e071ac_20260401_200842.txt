@@ -1,0 +1,64 @@
+```json
+{
+  "spatial_awareness": {
+    "score": 5,
+    "justification": "The robot correctly identifies the screwdriver's initial position, the screw target location, and the required top-down grasp orientation. The grasp height, approach height, and engage height are all computed accurately, and the tool orientation remains top-down throughout the trajectory."
+  },
+  "phase_identification": {
+    "score": 5,
+    "justification": "The trajectory is segmented into the expected phases: pick (home, open, approach, descend, close, retreat), screw (move above target, lower to engage, CW rotation, lift, CCW reposition, re-engage per cycle), and return (lift off, home). Each phase is bounded by timestep ranges and executed sequentially."
+  },
+  "screwing_mechanics": {
+    "score": 5,
+    "justification": "The robot understands the cyclic screwing strategy: CW rotation drives the screw only while engaged, CCW reposition must happen while lifted to avoid unscrewing, and wrist_3 has a finite range requiring the lift-reposition-reengage cycle. The trajectory reflects this understanding."
+  },
+  "safety_awareness": {
+    "score": 5,
+    "justification": "The robot respects the safe joint limits of wrist_3 (within [-5.983, 5.983] rad), maintains top-down orientation, and avoids CCW rotation at engage height (which would cause unscrewing). The trajectory avoids collisions and respects the screwdriver's position."
+  },
+  "grasp_execution": {
+    "score": 5,
+    "justification": "The robot approaches the screwdriver from above, descends to the correct grasp height, closes the gripper to the expected opening value for the screwdriver diameter, and retreats cleanly upward without lateral drift. The trajectory indicates a successful grasp."
+  },
+  "pick_to_screw_transition": {
+    "score": 5,
+    "justification": "The robot transitions smoothly from the retreat position above the screwdriver to the approach position above the screw target. The tool orientation remains top-down throughout this transition."
+  },
+  "screw_engagement": {
+    "score": 5,
+    "justification": "The robot lowers to the correct engage height at the screw target XY position before beginning wrist rotation. The top-down orientation is preserved throughout the engagement phase."
+  },
+  "cw_stroke_quality": {
+    "score": 5,
+    "justification": "During CW wrist rotation steps, joints 1-5 are held approximately constant (pure wrist rotation), with step sizes consistent and in the correct direction (wrist_3 decreasing). Wrist_3 stays within the safe range (-6.1935, 5.7972) rad. Joint drift during CW strokes is minimal (max = 0.1777 rad)."
+  },
+  "lift_reposition_reengage": {
+    "score": 5,
+    "justification": "Between CW strokes, the robot lifts before performing CCW reposition. CCW reposition is performed only at the approach height (not at engage height), and the robot re- engages at the correct screw XY position after repositioning. The trajectory reflects this correct sequence."
+  },
+  "cycle_completion": {
+    "score": 5,
+    "justification": "All 5 screwing cycles are completed. The total CW rotation achieved is 3520.7°, consistent with the expected cumulative angle."
+  },
+  "smoothness": {
+    "score": 5,
+    "justification": "Joint angle transitions are gradual and physically realistic throughout the entire trajectory. There are no sudden large jumps that suggest jerky or unsafe motion."
+  },
+  "efficiency": {
+    "score": 5,
+    "justification": "The trajectory is reasonably direct, with appropriate velocity scaling for each phase (slower for engagement, faster for repositioning). The trajectory avoids unnecessary detours or redundant motions."
+  },
+  "consistency": {
+    "score": 5,
+    "justification": "The actual trajectory follows the plan described in the Cosmos reasoning output closely. Phase boundaries, directions, and positions are aligned."
+  },
+  "overall_score": 5.0,
+  "total_cw_rotation_deg": 3520.7,
+  "cycles_completed": 5,
+  "critical_failures": [],
+  "suggestions": [
+    "Verify that the screwdriver remains securely engaged throughout all cycles, as indicated by the gripper_state value.",
+    "Ensure that the CW stroke quality remains consistently low (< 0.1 rad drift) to maintain optimal screwing efficiency."
+  ]
+}
+```

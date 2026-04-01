@@ -125,10 +125,10 @@ SCREW_APPROACH_Z = SCREW_TOOL0_Z + 0.15                     # 0.41 m
 SCREW_QX, SCREW_QY, SCREW_QZ, SCREW_QW = 1.0, 0.0, 0.0, 0.0
 
 # Screwing motion: 3 full CW turns, 4 steps per turn (90° increments)
-# CW from above → decrease wrist_3_joint (index 5)
+# CW from above → increase wrist_3_joint (index 5)
 SCREW_TURNS    = 3
 STEPS_PER_TURN = 4
-SCREW_STEP_RAD = -(2 * math.pi / STEPS_PER_TURN)   # -π/2 per step
+SCREW_STEP_RAD = +(2 * math.pi / STEPS_PER_TURN)   # +π/2 per step
 
 
 # ---------------------------------------------------------------------------

@@ -85,7 +85,7 @@ N_CYCLES = 5
 WRIST3_SAFE_MIN = -(2 * math.pi - 0.3)
 WRIST3_SAFE_MAX =  (2 * math.pi - 0.3)
 
-SCREW_STEP_RAD = -(math.pi / 4)
+SCREW_STEP_RAD = +(math.pi / 4)
 LIFT_H         = 0.06
 
 
@@ -134,6 +134,28 @@ def _ik_first(moveit, pose, seeds):
         if j is not None:
             return j
     return None
+
+
+def ik_and_move_with_current_wrist3(
+    moveit,
+    x: float,
+    y: float,
+    z: float,
+    initial_wrist3: float,
+    current_wrist3: float,
+    velocity_scaling=0.3,
+    seeds=None,
+):
+    """Move to an XYZ target while preserving the current wrist_3 roll.
+
+    For the screwdriver return-to-holder motion, the tool only needs to remain
+    top-down; forcing the canonical top-down quaternion can make IK jump to a
+    distant wrapped solution after the screwing cycles. Preserving the current
+    wrist_3 orientation keeps the motion on the same kinematic branch.
+    """
+    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, current_wrist3)
+    pose = make_pose(x, y, z, qx, qy, qz, qw)
+    return ik_and_move(moveit, pose, velocity_scaling=velocity_scaling, seeds=seeds)
 
 
 def save_trace(trace) -> Path:
@@ -219,6 +241,7 @@ def main():
         )
 
         _engage_joints = [None]
+        _initial_wrist3 = [None]
 
         def lower_to_engage_initial():
             for seed in [_last_joints[0], PICK_SEED, HOME_JOINTS]:
@@ -230,6 +253,7 @@ def main():
                     if ok:
                         _engage_joints[0] = list(j)
                         _last_joints[0]   = list(j)
+                        _initial_wrist3[0] = j[5]
                     return ok
             node.get_logger().error("IK failed for initial engage pose")
             return False
@@ -248,7 +272,7 @@ def main():
                 start_w3 = joints[5]
                 cw_steps = 0
 
-                while joints[5] + SCREW_STEP_RAD >= WRIST3_SAFE_MIN:
+                while joints[5] + SCREW_STEP_RAD <= WRIST3_SAFE_MAX:
                     joints[5] += SCREW_STEP_RAD
                     if not moveit.plan_and_execute_joints(joints, velocity_scaling=0.2):
                         node.get_logger().error(f"CW step {cw_steps + 1} failed")
@@ -256,7 +280,7 @@ def main():
                     cw_steps += 1
                     time.sleep(0.1)
 
-                stroke_rad   = start_w3 - joints[5]
+                stroke_rad   = joints[5] - start_w3
                 total_cw_rad += stroke_rad
                 node.get_logger().info(
                     f"  CW: {cw_steps} steps × 45°, "
@@ -276,13 +300,13 @@ def main():
                     return False
 
                 ccw_joints    = list(lift_joints)
-                ccw_joints[5] = WRIST3_SAFE_MAX
+                ccw_joints[5] = WRIST3_SAFE_MIN
                 if not moveit.plan_and_execute_joints(ccw_joints, velocity_scaling=0.5):
                     node.get_logger().error(f"CCW reset failed (cycle {cycle})")
                     return False
 
                 if cycle < N_CYCLES:
-                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
+                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MIN)
                     lower_pose  = make_pose(SCREW_X, SCREW_Y, SCREW_TOOL0_Z,
                                             qx, qy, qz, qw)
                     re_engage   = _ik_first(moveit, lower_pose, [ccw_joints, PICK_SEED])
@@ -294,7 +318,7 @@ def main():
                         return False
                     _engage_joints[0] = list(re_engage)
                 else:
-                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MAX)
+                    qx, qy, qz, qw = q_from_wrist3_delta(initial_wrist3, WRIST3_SAFE_MIN)
                     exit_pose   = make_pose(SCREW_X, SCREW_Y, SCREW_APPROACH_Z,
                                             qx, qy, qz, qw)
                     exit_joints = _ik_first(moveit, exit_pose, [ccw_joints, PICK_SEED])
@@ -345,11 +369,27 @@ def main():
              f"(CW to limit → lift → CCW only wrist_3 → lower)",
              run_screw_cycles),
             ("Return screwdriver to holder (approach)",
-             lambda: ik_and_move(moveit, approach_pose, 0.3,
-                                 [_last_joints[0], PICK_SEED, HOME_JOINTS])),
+             lambda: ik_and_move_with_current_wrist3(
+                 moveit,
+                 SCREWDRIVER_X,
+                 SCREWDRIVER_Y,
+                 GRASP_Z + APPROACH_H,
+                 _initial_wrist3[0],
+                 _last_joints[0][5],
+                 0.3,
+                 [_last_joints[0], PICK_SEED, HOME_JOINTS],
+             )),
             ("Lower to holder",
-             lambda: ik_and_move(moveit, grasp_pose, 0.2,
-                                 [_last_joints[0], PICK_SEED])),
+             lambda: ik_and_move_with_current_wrist3(
+                 moveit,
+                 SCREWDRIVER_X,
+                 SCREWDRIVER_Y,
+                 GRASP_Z,
+                 _initial_wrist3[0],
+                 _last_joints[0][5],
+                 0.2,
+                 [_last_joints[0], PICK_SEED],
+             )),
             ("Open gripper (drop screwdriver at holder)",
              lambda: gripper.open()),
             ("Detach screwdriver from tool0",
@@ -400,6 +440,8 @@ def main():
         print("\n" + "=" * 66)
         print(f"  Result: {'SUCCESS' if all_ok else 'FAILED — see above.'}")
         print("=" * 66 + "\n")
+        if not all_ok:
+            sys.exit(1)
 
     except KeyboardInterrupt:
         print("\nInterrupted.")

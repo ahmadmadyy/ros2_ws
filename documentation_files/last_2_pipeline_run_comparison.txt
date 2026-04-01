@@ -1,0 +1,249 @@
+Pipeline Run Comparison Summary
+Generated: 2026-04-01 UTC
+
+========================================================================
+RUN 1
+========================================================================
+
+Initial trace
+- File: outputs/screw_trace/screw_continuous_20260401_192247.json
+- Trace ID: d5e48f00
+- Snapshots: 21769
+- Duration: 226.56 s
+
+Post-waypoint trace
+- File: outputs/screw_trace/cosmos_executed_20260401_192944.json
+- Trace ID: 8514f75f
+- Snapshots: 24754
+- Duration: 256.0998 s
+
+2B outputs before waypoints
+- outputs/cosmos/2b/cosmos_screw_d5e48f00_20260401_192251.json
+- outputs/cosmos/2b/cosmos_fault_detection_d5e48f00_20260401_192251.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_d5e48f00_20260401_192251.json
+- outputs/cosmos/2b/cosmos_process_quality_d5e48f00_20260401_192251.json
+
+2B scores before waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 5.00
+- process_quality: 5.00
+- average: 5.0000
+
+8B scores before waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 5.00
+- process_quality: 5.00
+- average: 5.0000
+
+Chosen waypoint output
+- File: outputs/cosmos/8b/waypoints_screw_d5e48f00_20260401_192251.json
+- Generated waypoints: 86
+- task_summary: Improved consistency in CW stroke duration and step size, reduced joint drift during CW strokes, and ensured uniform lift height between cycles to enhance repeatability and minimize unnecessary motion.
+
+Waypoint parameters used
+- n_cycles: 5
+- cw_step_rad: 0.785
+- cw_velocity_scaling: 0.15
+- lift_height_m: 0.06
+- lift_velocity_scaling: 0.3
+- ccw_velocity_scaling: 0.5
+- lower_velocity_scaling: 0.15
+- final_lift_velocity_scaling: 0.3
+- return_home_velocity_scaling: 0.3
+
+2B outputs after waypoints
+- outputs/cosmos/2b/cosmos_screw_8514f75f_20260401_192948.json
+- outputs/cosmos/2b/cosmos_fault_detection_8514f75f_20260401_192948.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_8514f75f_20260401_192948.json
+- outputs/cosmos/2b/cosmos_process_quality_8514f75f_20260401_192948.json
+
+2B scores after waypoints
+- screw: 4.70
+- fault_detection: 4.44
+- energy_dynamics: 5.00
+- process_quality: 4.07
+- average: 4.5525
+
+8B scores after waypoints
+- screw: 4.70
+- fault_detection: 4.44
+- energy_dynamics: 5.00
+- process_quality: 4.07
+- average: 4.5530
+
+Score change
+- screw: -0.30
+- fault_detection: -0.56
+- energy_dynamics: +0.00
+- process_quality: -0.93
+- average: -0.4470
+
+========================================================================
+RUN 2
+========================================================================
+
+Initial trace
+- File: outputs/screw_trace/screw_continuous_20260401_192835.json
+- Trace ID: f708cbe6
+- Snapshots: 19654
+- Duration: 205.9197 s
+
+Post-waypoint trace
+- File: outputs/screw_trace/cosmos_executed_20260401_193511.json
+- Trace ID: 6755badc
+- Snapshots: 22125
+- Duration: 233.1996 s
+
+2B outputs before waypoints
+- outputs/cosmos/2b/cosmos_screw_f708cbe6_20260401_192838.json
+- outputs/cosmos/2b/cosmos_fault_detection_f708cbe6_20260401_192838.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_f708cbe6_20260401_192838.json
+- outputs/cosmos/2b/cosmos_process_quality_f708cbe6_20260401_192838.json
+
+2B scores before waypoints
+- screw: 5.00
+- fault_detection: 4.83
+- energy_dynamics: 4.97
+- process_quality: 4.87
+- average: 4.9175
+
+8B scores before waypoints
+- screw: 5.00
+- fault_detection: 4.83
+- energy_dynamics: 4.97
+- process_quality: 4.87
+- average: 4.9175
+
+Chosen waypoint output
+- File: outputs/cosmos/8b/waypoints_screw_f708cbe6_20260401_192838.json
+- Generated waypoints: 91
+- task_summary: Improved screwing cycle consistency by reducing CW step size and adjusting velocities for smoother motion. Maintained engagement repeatability and ensured proper return-to-home alignment by fine-tuning lift height and final lift velocity scaling. No changes to joint configurations were needed as they remained within safe and IK-valid ranges.
+
+Waypoint parameters used
+- n_cycles: 5
+- cw_step_rad: 0.707
+- cw_velocity_scaling: 0.2
+- lift_height_m: 0.06
+- lift_velocity_scaling: 0.4
+- ccw_velocity_scaling: 0.5
+- lower_velocity_scaling: 0.15
+- final_lift_velocity_scaling: 0.45
+- return_home_velocity_scaling: 0.3
+
+2B outputs after waypoints
+- outputs/cosmos/2b/cosmos_screw_6755badc_20260401_193514.json
+- outputs/cosmos/2b/cosmos_fault_detection_6755badc_20260401_193514.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_6755badc_20260401_193514.json
+- outputs/cosmos/2b/cosmos_process_quality_6755badc_20260401_193514.json
+
+2B scores after waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 5.00
+- process_quality: 5.00
+- average: 5.0000
+
+8B scores after waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 5.00
+- process_quality: 5.00
+- average: 5.0000
+
+Score change
+- screw: +0.00
+- fault_detection: +0.17
+- energy_dynamics: +0.03
+- process_quality: +0.13
+- average: +0.0825
+
+========================================================================
+RUN 3
+========================================================================
+
+Initial trace
+- File: outputs/screw_trace/screw_continuous_20260401_200839.json
+- Trace ID: b2e071ac
+- Snapshots: 21845
+- Duration: 229.8809 s
+
+Post-waypoint trace
+- File: outputs/screw_trace/cosmos_executed_20260401_201454.json
+- Trace ID: 8ceca9ea
+- Snapshots: 21400
+- Duration: 224.66 s
+
+2B outputs before waypoints
+- outputs/cosmos/2b/cosmos_screw_b2e071ac_20260401_200842.json
+- outputs/cosmos/2b/cosmos_fault_detection_b2e071ac_20260401_200842.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_b2e071ac_20260401_200842.json
+- outputs/cosmos/2b/cosmos_process_quality_b2e071ac_20260401_200842.json
+
+2B scores before waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 4.87
+- process_quality: 5.00
+- average: 4.9675
+
+8B scores before waypoints
+- screw: 5.00
+- fault_detection: 5.00
+- energy_dynamics: 4.87
+- process_quality: 5.00
+- average: 4.9675
+
+Chosen waypoint output
+- File: outputs/cosmos/8b/waypoints_screw_b2e071ac_20260401_200842.json
+- Generated waypoints: 87
+- task_summary: Optimized final return-to-home motion and refined engagement position repeatability through adjusted velocities and step size, while maintaining consistent cycle performance and joint limits compliance.
+
+Waypoint parameters used
+- n_cycles: 5
+- cw_step_rad: 0.75
+- cw_velocity_scaling: 0.2
+- lift_height_m: 0.06
+- lift_velocity_scaling: 0.3
+- ccw_velocity_scaling: 0.5
+- lower_velocity_scaling: 0.15
+- final_lift_velocity_scaling: 0.3
+- return_home_velocity_scaling: 0.4
+
+2B outputs after waypoints
+- outputs/cosmos/2b/cosmos_screw_8ceca9ea_20260401_201457.json
+- outputs/cosmos/2b/cosmos_fault_detection_8ceca9ea_20260401_201457.json
+- outputs/cosmos/2b/cosmos_energy_dynamics_8ceca9ea_20260401_201457.json
+- outputs/cosmos/2b/cosmos_process_quality_8ceca9ea_20260401_201457.json
+
+2B scores after waypoints
+- screw: 5.00
+- fault_detection: N/A (overall_score missing in 2B output)
+- energy_dynamics: 4.73
+- process_quality: 4.97
+- average: 4.9000 (computed over available 2B scores)
+
+8B scores after waypoints
+- screw: 5.00
+- fault_detection: 4.95
+- energy_dynamics: 4.73
+- process_quality: 4.97
+- average: 4.9125
+
+Score change
+- screw: +0.00
+- fault_detection: -0.05
+- energy_dynamics: -0.14
+- process_quality: -0.03
+- average: -0.0550
+
+========================================================================
+NOTES
+========================================================================
+
+- The 2B analysis outputs in these runs also contain an embedded overall_score.
+- The 8B evaluation files remain the main evaluation stage in the pipeline.
+- Run 1 is a regression case.
+- Run 2 is an improvement case.
+- Run 3 is a mild regression case.
