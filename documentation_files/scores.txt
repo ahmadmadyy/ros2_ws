@@ -1,0 +1,199 @@
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: dfd5438f
+After waypoints: 46f06b9e
+
+2B Scores
+Before:
+screw: 5.00
+fault_detection: 4.85
+energy_dynamics: 4.85
+process_quality: 4.89
+average: 4.8975
+
+After:
+screw: 5.00
+fault_detection: 4.88
+energy_dynamics: 4.96
+process_quality: 4.98
+average: 4.9550
+
+2B Delta
+screw: +0.00
+fault_detection: +0.03
+energy_dynamics: +0.11
+process_quality: +0.09
+average: +0.0575
+
+8B Scores
+Before:
+screw: 3.80
+fault_detection: 3.43
+energy_dynamics: 4.12
+process_quality: 4.15
+average: 3.8750
+
+After:
+screw: 4.16
+fault_detection: 3.65
+energy_dynamics: 3.96
+process_quality: 4.21
+average: 3.9950
+
+8B Delta
+screw: +0.36
+fault_detection: +0.22
+energy_dynamics: -0.16
+process_quality: +0.06
+average: +0.1200
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 50915f55
+After waypoints: 6148990a
+
+2B Scores
+Before:
+screw: 5.00
+fault_detection: 4.98
+energy_dynamics: 4.89
+process_quality: 5.00
+average: 4.9675
+
+After:
+screw: 5.00
+fault_detection: 4.88
+energy_dynamics: 4.88
+process_quality: 4.79
+average: 4.8875
+
+2B Delta
+screw: +0.00
+fault_detection: -0.10
+energy_dynamics: -0.01
+process_quality: -0.21
+average: -0.0800
+
+8B Scores
+Before:
+screw: 3.92
+fault_detection: 3.56
+energy_dynamics: 4.68
+process_quality: 3.76
+average: 3.9800
+
+After:
+screw: 3.90
+fault_detection: 3.79
+energy_dynamics: 4.76
+process_quality: 3.57
+average: 4.0050
+
+8B Delta
+screw: -0.02
+fault_detection: +0.23
+energy_dynamics: +0.08
+process_quality: -0.19
+average: +0.0250
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 9c3d6967
+After waypoints: f9840022
+
+2B Scores
+Before:
+screw: 5.00
+fault_detection: 5.00
+energy_dynamics: 4.97
+process_quality: 4.98
+average: 4.9875
+
+After:
+screw: 5.00
+fault_detection: 5.00
+energy_dynamics: 3.68
+process_quality: 4.86
+average: 4.6350
+
+2B Delta
+screw: +0.00
+fault_detection: +0.00
+energy_dynamics: -1.29
+process_quality: -0.12
+average: -0.3525
+
+8B Scores
+Before:
+screw: 3.98
+fault_detection: 3.65
+energy_dynamics: 4.32
+process_quality: 3.63
+average: 3.8950
+
+After:
+screw: 4.00
+fault_detection: 3.56
+energy_dynamics: 3.88
+process_quality: 3.65
+average: 3.7725
+
+8B Delta
+screw: +0.02
+fault_detection: -0.09
+energy_dynamics: -0.44
+process_quality: +0.02
+average: -0.1225
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 86aec5c3
+After waypoints: 6ff50472
+
+2B Scores
+Before:
+screw: 5.00
+fault_detection: 4.98
+energy_dynamics: 4.98
+process_quality: 4.66
+average: 4.9050
+
+After:
+screw: 5.00
+fault_detection: 4.95
+energy_dynamics: 4.88
+process_quality: 4.93
+average: 4.9400
+
+2B Delta
+screw: +0.00
+fault_detection: -0.03
+energy_dynamics: -0.10
+process_quality: +0.27
+average: +0.0350
+
+8B Scores
+Before:
+screw: 3.78
+fault_detection: 3.63
+energy_dynamics: 4.06
+process_quality: 3.62
+average: 3.7725
+
+After:
+screw: 4.20
+fault_detection: 4.16
+energy_dynamics: 4.52
+process_quality: 3.86
+average: 4.1850
+
+8B Delta
+screw: +0.42
+fault_detection: +0.53
+energy_dynamics: +0.46
+process_quality: +0.24
+average: +0.4125

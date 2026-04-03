@@ -1,4 +1,23 @@
-You are an expert evaluator for robotic manipulation tasks involving screwdriver-based screwing operations. You will assess the quality of a robot's task execution and the reasoning that guided it.
+You are an expert evaluator for robotic manipulation tasks involving screwdriver-based screwing operations. You will assess the quality of a robot's task execution and the reasoning that guided it, with a focus on mechanical correctness and motion precision.
+
+**Output brevity rule: keep every `justification` field to 2 sentences maximum.**
+
+## Pre-Computed Trajectory Metrics
+The following values were computed from verified trajectory data before this prompt was generated.
+**You must use these values directly in your scoring — do not recompute or override them.**
+
+- Total CW rotation executed: {metrics_total_cw_deg}° (expected: {metrics_expected_cw_deg}°)
+- CW stroke joint drift per block (j1–j5 max deviation): {metrics_cw_drift_per_block}
+- Engagement repeatability (worst-joint max deviation across engage positions): {metrics_engage_repeatability}
+- Peak wrist_3 (j6) velocity: {metrics_peak_w3_vel} rad/s
+- Productive screwing time: {metrics_productive_pct}% of {metrics_total_duration}s total
+- Return-to-home L2 error: {metrics_home_error_l2} rad
+- Wrist_3 observed range: [{metrics_w3_min}, {metrics_w3_max}] rad
+
+Mandatory scoring constraints (apply these first before assigning any scores):
+{metrics_scoring_constraints}
+
+---
 
 ## Task Context
 - **Task description**: {task_description}
@@ -25,136 +44,145 @@ Expected fields per timestep:
 - `joints`: [j1, j2, j3, j4, j5, j6] in radians
 - `gripper_state`: gripper opening value (0.0 = fully open, 1.0 = fully closed)
 
+---
+
 ## Evaluation Rubric
 
-Score each dimension from 1 (worst) to 5 (best). Provide a brief justification for each score.
+Score each dimension 1–5. Cite the relevant pre-computed metric value in your justification wherever a numeric threshold table is provided.
 
 ---
 
-### A. Reasoning Quality (4 criteria)
+### A. Reasoning Quality
 
-**1. Spatial Awareness** (1-5)
-Does the reasoning correctly identify:
-- The screwdriver position and the screw target location
-- The required top-down grasp orientation
-- The geometric relationship between grasp height, approach height, and engage height
-- The spatial layout of the workspace (screwdriver → screw target transit path)
+**1. Spatial Awareness** (1–5)
+Does the reasoning correctly identify the screwdriver and screw target positions, the top-down grasp requirement, and the spatial layout of the workspace?
 
-**2. Phase Identification** (1-5)
-Does the reasoning correctly segment the trajectory into the expected phases with accurate timestep boundaries:
-- **Pick phases**: home → open gripper → approach screwdriver → descend → close gripper → retreat
-- **Screw phases**: move above target → lower to engage → CW rotation → lift → CCW reposition → re-engage (per cycle)
-- **Return phases**: final lift → return home
+**2. Phase Identification** (1–5)
+Does the reasoning accurately segment the trajectory into pick, screw, and return phases with correct timestep boundaries?
 
-**3. Screwing Mechanics Understanding** (1-5)
-Does the reasoning demonstrate understanding of:
-- CW rotation drives the screw only while the screwdriver is engaged with the screw head
-- CCW reposition must happen only while lifted to avoid unscrewing
-- Wrist_3 has a finite joint range, which necessitates the cyclic lift-reposition-reengage strategy
-- The relationship between step size, number of steps per stroke, and total rotation per cycle
+**3. Screwing Mechanics Understanding** (1–5)
+Does the reasoning demonstrate understanding of the CW/CCW cycling strategy, why joint-range limits force repeated lift-reposition cycles, and the relationship between step size and total rotation per stroke?
 
-**4. Safety Awareness** (1-5)
-Does the reasoning account for:
-- Wrist_3 staying within the safe margin of its joint limits
-- Gripper stability during screwing (no unexpected state changes that would drop the screwdriver)
-- Collision avoidance during pick-to-screw transit (screwdriver extending below tool0)
-- Proper sequencing constraints (never CCW while at engage height)
+**4. Safety Awareness** (1–5)
+Does the reasoning account for joint limit margins, gripper stability throughout screwing, and the constraint that CCW rotation must only occur while lifted?
 
 ---
 
-### B. Trajectory Quality — Pick Phase (2 criteria)
+### B. Trajectory Quality — Pick Phase
 
-**5. Grasp Execution** (1-5)
+**5. Grasp Execution** (1–5)
 | Score | Description |
 |-------|-------------|
-| 5 | Top-down approach, correct grasp height, gripper closes to expected value, clean vertical retreat |
-| 3 | Minor misalignment or slightly off gripper value, but likely functional grasp |
+| 5 | Top-down approach, correct grasp height, gripper closes to 0.57 rad (±0.03), clean vertical retreat with no lateral drift |
+| 4 | Correct approach and height but gripper slightly off (±0.06 rad) or minor positional offset at grasp |
+| 3 | Minor misalignment or gripper value outside ±0.06 rad, but grasp likely functional |
+| 2 | Noticeable misalignment or gripper variation suggesting unreliable grasp |
 | 1 | Wrong approach angle, wrong height, or gripper did not close appropriately |
 
-**6. Pick-to-Screw Transition** (1-5)
+**6. Pick-to-Screw Transition** (1–5)
 | Score | Description |
 |-------|-------------|
-| 5 | Smooth lateral repositioning from screwdriver to screw target, top-down orientation maintained |
-| 3 | Some unnecessary waypoints or minor orientation deviation during transit |
+| 5 | Direct path, top-down orientation maintained continuously, no redundant waypoints |
+| 3 | Minor orientation deviation or a small detour, but arrives at screw target correctly |
 | 1 | Large detour, orientation flip, or path suggesting potential collision |
 
 ---
 
-### C. Trajectory Quality — Screwing Phase (4 criteria)
+### C. Trajectory Quality — Screwing Phase
 
-**7. Screw Engagement** (1-5)
+**7. Screw Engagement** (1–5)
 | Score | Description |
 |-------|-------------|
-| 5 | Precise XY alignment with screw target, correct engage Z height, top-down orientation preserved |
-| 3 | Slight positional offset but screwdriver tip likely still contacts the screw head |
-| 1 | Clearly misaligned in XY, wrong Z height, or orientation lost |
+| 5 | Precise XY alignment at screw target, correct engage Z height, top-down orientation preserved at all engage events |
+| 4 | Correct XY and Z but minor orientation deviation (< 5°) at one engage event |
+| 3 | Slight positional offset (screwdriver tip likely still contacts screw head) |
+| 2 | Moderate misalignment — tip contact uncertain |
+| 1 | Clearly misaligned in XY, wrong Z, or orientation lost |
 
-**8. CW Stroke Quality** (1-5)
-Evaluate each CW rotation segment for:
-- **Joint isolation**: Joints 1–5 held approximately constant (< 0.05 rad drift) while only wrist_3 rotates
-- **Direction correctness**: Wrist_3 values are monotonically decreasing (CW when viewed from above with top-down orientation)
-- **Step consistency**: Each increment is approximately {screw_step_rad} rad
-- **Limit compliance**: Wrist_3 never drops below {wrist3_safe_min}
+**8. CW Stroke Joint Isolation** (1–5)
+Use `{metrics_cw_drift_per_block}` — extract the worst-block max drift value and apply the table below.
 
+| Score | Worst-block max drift (j1–j5 combined) |
+|-------|----------------------------------------|
+| 5 | < 0.005 rad |
+| 4 | 0.005 – 0.020 rad |
+| 3 | 0.020 – 0.050 rad |
+| 2 | 0.050 – 0.100 rad |
+| 1 | ≥ 0.100 rad |
+
+Also verify: j6 is monotonically increasing during each CW block (correct direction); each step is approximately {screw_step_rad} rad.
+
+**9. Lift-Reposition-Reengage Quality** (1–5)
 | Score | Description |
 |-------|-------------|
-| 5 | Pure wrist rotation, consistent steps, correct direction, within safe limits |
-| 3 | Minor drift in other joints or slightly inconsistent steps, but mostly correct |
-| 1 | Significant arm movement during screwing, wrong direction, or joint limit violation |
+| 5 | Every cycle: j1–j5 change for lift, j6 stays at CW-end value; j6 resets to safe_min while lifted; j1–j5 return to engage position for lower — all 5 cycles |
+| 4 | All cycles structurally correct; one minor positional deviation at re-engage < 0.02 rad |
+| 3 | Mostly correct but one cycle has sequencing or positional issue |
+| 2 | Two or more cycles with problems, or one cycle where CCW occurred at wrong height |
+| 1 | CCW at engage height (unscrewing), failed re-engage, or gross position error |
 
-**9. Lift-Reposition-Reengage Quality** (1-5)
-For each inter-stroke transition, verify the sequence: lift → CCW → lower.
+**10. Cycle Rotation Accuracy** (1–5)
+Use `{metrics_total_cw_deg}`° actual vs `{metrics_expected_cw_deg}`° expected.
+Compute deviation = |actual − expected| / expected × 100.
 
-| Score | Description |
-|-------|-------------|
-| 5 | Every cycle follows clean lift → CCW → lower sequence at correct positions |
-| 3 | Mostly correct but one cycle had minor sequencing or positional issues |
-| 1 | CCW occurred at engage height (unscrewing), failed to re-engage, or wrong XY after reposition |
-
-**10. Cycle Completion** (1-5)
-| Score | Description |
-|-------|-------------|
-| 5 | All {n_cycles} cycles completed; total CW rotation consistent with expected cumulative angle |
-| 3 | Most cycles completed; total rotation lower than expected but non-trivial |
-| 1 | Fewer than half the cycles completed or negligible total rotation |
+| Score | Deviation from expected CW rotation |
+|-------|--------------------------------------|
+| 5 | ≤ 3% |
+| 4 | 3 – 8% |
+| 3 | 8 – 20% |
+| 2 | 20 – 40% |
+| 1 | > 40% or fewer than half the cycles completed |
 
 ---
 
-### D. Trajectory Quality — General (2 criteria)
+### D. Engagement Repeatability
 
-**11. Smoothness** (1-5)
-| Score | Description |
-|-------|-------------|
-| 5 | All joint transitions are gradual and physically realistic |
-| 3 | Occasional abrupt changes but generally acceptable |
-| 1 | Frequent large jumps suggesting unsafe or unrealistic motion |
+**11. Engagement Repeatability** (1–5)
+Use `{metrics_engage_repeatability}`. Extract the worst-joint maximum deviation across all detected engage positions.
+If the value is "N/A" (fewer than 2 engage positions detected), assign score 2.
 
-**12. Efficiency** (1-5)
-| Score | Description |
-|-------|-------------|
-| 5 | Direct paths, appropriate velocity scaling per phase (slow for engage, fast for reposition) |
-| 3 | Some unnecessary motions but overall acceptable timing |
-| 1 | Highly inefficient with excessive detours or uniformly slow speed |
+| Score | Worst-joint max deviation across all engage positions |
+|-------|-------------------------------------------------------|
+| 5 | < 0.005 rad |
+| 4 | 0.005 – 0.015 rad |
+| 3 | 0.015 – 0.050 rad |
+| 2 | 0.050 – 0.100 rad |
+| 1 | ≥ 0.100 rad |
 
 ---
 
-### E. Reasoning–Trajectory Alignment (1 criterion)
+### E. General Motion Quality
 
-**13. Consistency** (1-5)
-| Score | Description |
-|-------|-------------|
-| 5 | Reasoning and trajectory match closely — phase boundaries, rotation directions, positions all align |
-| 3 | General alignment but some described phases don't match trajectory timing or values |
-| 1 | Reasoning describes a fundamentally different trajectory than what was executed |
+**12. Motion Smoothness** (1–5)
+Use `{metrics_peak_w3_vel}` rad/s for the primary threshold. Also check non-wrist joints for abrupt transitions.
+
+| Score | Peak wrist_3 velocity |
+|-------|-----------------------|
+| 5 | < 0.50 rad/s |
+| 4 | 0.50 – 1.00 rad/s |
+| 3 | 1.00 – 1.50 rad/s |
+| 2 | 1.50 – 2.00 rad/s |
+| 1 | ≥ 2.00 rad/s |
+
+**13. Task Efficiency** (1–5)
+Use `{metrics_productive_pct}`% productive screwing time out of {metrics_total_duration}s total.
+
+| Score | Productive screwing time fraction |
+|-------|-----------------------------------|
+| 5 | > 65% |
+| 4 | 50 – 65% |
+| 3 | 35 – 50% |
+| 2 | 20 – 35% |
+| 1 | ≤ 20% |
 
 ---
 
 ## Critical Failure Conditions
 
-Flag as a **critical failure** (regardless of individual scores) if ANY of the following are detected:
+Flag as a **critical failure** if ANY of the following are detected:
 1. Gripper state changed during any screwing cycle (screwdriver likely dropped)
 2. CCW wrist rotation occurred at screw-engage height (unscrewing the screw)
-3. Wrist_3 exceeded the safe joint limits [{wrist3_safe_min}, {wrist3_safe_max}] at any timestep
+3. Wrist_3 exceeded the safe joint limits [{wrist3_safe_min}, {wrist3_safe_max}] rad
 4. Fewer than 1 complete CW stroke was executed
 5. Tool orientation deviated more than 15° from top-down during screw engagement
 6. Robot did not visit both the screwdriver location and the screw target location
@@ -167,25 +195,27 @@ Compute `overall_score` as the weighted average of all 13 scores:
 
 | Criterion | Weight |
 |-----------|--------|
-| Cycle Completion | 20% |
-| CW Stroke Quality | 15% |
-| Lift-Reposition-Reengage Quality | 12% |
-| Screw Engagement | 10% |
-| Grasp Execution | 10% |
-| Consistency | 8% |
-| Safety Awareness | 8% |
-| Screwing Mechanics Understanding | 5% |
-| Smoothness | 4% |
-| Efficiency | 3% |
-| Phase Identification | 2% |
-| Pick-to-Screw Transition | 2% |
-| Spatial Awareness | 1% |
+| CW Stroke Joint Isolation (criterion 8) | 18% |
+| Cycle Rotation Accuracy (criterion 10) | 14% |
+| Engagement Repeatability (criterion 11) | 14% |
+| Lift-Reposition-Reengage Quality (criterion 9) | 10% |
+| Screw Engagement (criterion 7) | 9% |
+| Grasp Execution (criterion 5) | 8% |
+| Motion Smoothness (criterion 12) | 7% |
+| Task Efficiency (criterion 13) | 5% |
+| Consistency — Reasoning vs Trajectory | 5% |
+| Safety Awareness (criterion 4) | 4% |
+| Screwing Mechanics Understanding (criterion 3) | 3% |
+| Phase Identification (criterion 2) | 2% |
+| Spatial Awareness (criterion 1) | 1% |
+
+For criterion 13 "Consistency": score 5 if reasoning phase boundaries, rotation directions, and positions closely match the trajectory; score 3 if generally aligned but some mismatch; score 1 if reasoning describes a fundamentally different trajectory.
 
 ---
 
 ## Output Format
 
-Return your evaluation strictly as the following JSON structure:
+Return your evaluation strictly as the following JSON:
 ```json
 {
   "spatial_awareness": {"score": <1-5>, "justification": "<str>"},
@@ -195,16 +225,16 @@ Return your evaluation strictly as the following JSON structure:
   "grasp_execution": {"score": <1-5>, "justification": "<str>"},
   "pick_to_screw_transition": {"score": <1-5>, "justification": "<str>"},
   "screw_engagement": {"score": <1-5>, "justification": "<str>"},
-  "cw_stroke_quality": {"score": <1-5>, "justification": "<str>"},
+  "cw_stroke_quality": {"score": <1-5>, "justification": "<str, cite drift value>"},
   "lift_reposition_reengage": {"score": <1-5>, "justification": "<str>"},
-  "cycle_completion": {"score": <1-5>, "justification": "<str>"},
-  "smoothness": {"score": <1-5>, "justification": "<str>"},
-  "efficiency": {"score": <1-5>, "justification": "<str>"},
-  "consistency": {"score": <1-5>, "justification": "<str>"},
-  "overall_score": <float, 1.0-5.0>,
+  "cycle_completion": {"score": <1-5>, "justification": "<str, cite actual vs expected deg>"},
+  "engagement_repeatability": {"score": <1-5>, "justification": "<str, cite repeatability value>"},
+  "smoothness": {"score": <1-5>, "justification": "<str, cite peak wrist_3 velocity>"},
+  "efficiency": {"score": <1-5>, "justification": "<str, cite productive pct>"},
+  "overall_score": <float 1.0-5.0>,
   "total_cw_rotation_deg": <float>,
   "cycles_completed": <int>,
-  "critical_failures": ["<list any triggered critical failure conditions, or empty if none>"],
-  "suggestions": ["<list specific improvement recommendations>"]
+  "critical_failures": ["<or empty list>"],
+  "suggestions": ["<specific, actionable improvement recommendations>"]
 }
 ```

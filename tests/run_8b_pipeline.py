@@ -653,10 +653,17 @@ def fill_analysis_prompt(template: str, trajectory_json: str, metrics: dict[str,
     return result
 
 
-def fill_eval_prompt(template: str, cosmos_reasoning: str, trajectory_json: str) -> str:
+def fill_eval_prompt(
+    template: str,
+    cosmos_reasoning: str,
+    trajectory_json: str,
+    metrics: dict[str, str] | None = None,
+) -> str:
     ctx = dict(TASK_CONTEXT)
     ctx["cosmos_reasoning_text"] = cosmos_reasoning
     ctx["joint_trajectory_json"] = trajectory_json
+    if metrics:
+        ctx.update(metrics)
     result = template
     for key, val in ctx.items():
         result = result.replace("{" + key + "}", str(val))
@@ -725,6 +732,7 @@ async def call_cosmos(
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.6,
         "max_tokens": max_tokens,
+        "repetition_penalty": 1.1,
     }
     resp = await client.post(f"{cosmos_url}/v1/chat/completions", json=payload)
     resp.raise_for_status()
@@ -858,7 +866,7 @@ async def main(trace_path: Path, cosmos_2b_url: str = COSMOS_2B_URL, cosmos_8b_u
 
             cosmos_reasoning = analysis_outputs[slug]["response"]
             eval_template = (PROMPTS_DIR / eval_prompt_file).read_text()
-            filled = fill_eval_prompt(eval_template, cosmos_reasoning, trajectory_json)
+            filled = fill_eval_prompt(eval_template, cosmos_reasoning, trajectory_json, metrics)
 
             est_tokens = int(len(filled) / 2.5)
             max_tokens = min(COSMOS_MAX_OUTPUT_TOKENS, context_limit - est_tokens - 200)

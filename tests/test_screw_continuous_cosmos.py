@@ -242,6 +242,58 @@ def main():
 
         _engage_joints = [None]
         _initial_wrist3 = [None]
+        _pick_approach_joints = [None]   # joints used when approaching the holder (reused for return)
+        _pick_grasp_joints    = [None]   # joints used when grasping (reused for lower-to-holder)
+
+        def approach_screwdriver():
+            ok = ik_and_move(moveit, approach_pose, 0.3, [PICK_SEED, HOME_JOINTS])
+            if ok:
+                _pick_approach_joints[0] = list(_last_joints[0])
+            return ok
+
+        def descend_to_grasp():
+            ok = ik_and_move(moveit, grasp_pose, 0.2, [_last_joints[0], PICK_SEED])
+            if ok:
+                _pick_grasp_joints[0] = list(_last_joints[0])
+            return ok
+
+        def return_to_holder_approach():
+            """Return to the holder at approach height.
+            Reuses the exact joints from the original approach to avoid IK finding
+            a wrapped solution after wrist_3 has accumulated large offsets."""
+            if _pick_approach_joints[0] is not None:
+                ok = moveit.plan_and_execute_joints(
+                    _pick_approach_joints[0], velocity_scaling=0.3
+                )
+                if ok:
+                    _last_joints[0] = list(_pick_approach_joints[0])
+                return ok
+            # fallback if joints were never saved
+            return ik_and_move_with_current_wrist3(
+                moveit,
+                SCREWDRIVER_X, SCREWDRIVER_Y, GRASP_Z + APPROACH_H,
+                _initial_wrist3[0], _last_joints[0][5], 0.3,
+                [_last_joints[0], PICK_SEED, HOME_JOINTS],
+            )
+
+        def lower_to_holder():
+            """Lower to grasp height at the holder.
+            Reuses the exact joints from the original descend-to-grasp to guarantee
+            a valid, near-identity path from the approach position."""
+            if _pick_grasp_joints[0] is not None:
+                ok = moveit.plan_and_execute_joints(
+                    _pick_grasp_joints[0], velocity_scaling=0.2
+                )
+                if ok:
+                    _last_joints[0] = list(_pick_grasp_joints[0])
+                return ok
+            # fallback
+            return ik_and_move_with_current_wrist3(
+                moveit,
+                SCREWDRIVER_X, SCREWDRIVER_Y, GRASP_Z,
+                _initial_wrist3[0], _last_joints[0][5], 0.2,
+                [_last_joints[0], PICK_SEED],
+            )
 
         def lower_to_engage_initial():
             for seed in [_last_joints[0], PICK_SEED, HOME_JOINTS]:
@@ -348,11 +400,11 @@ def main():
             ("Open gripper",
              lambda: gripper.open()),
             ("Approach screwdriver (top-down)",
-             lambda: ik_and_move(moveit, approach_pose, 0.3, [PICK_SEED, HOME_JOINTS])),
+             approach_screwdriver),
             ("Allow gripper ↔ screwdriver collision",
              lambda: moveit.allow_collision("screwdriver")),
             ("Descend to grasp",
-             lambda: ik_and_move(moveit, grasp_pose, 0.2, [_last_joints[0], PICK_SEED])),
+             descend_to_grasp),
             ("Close gripper onto shaft",
              lambda: gripper.set_position(GRASP_GRIPPER_POSITION)),
             ("Attach screwdriver to tool0",
@@ -369,27 +421,9 @@ def main():
              f"(CW to limit → lift → CCW only wrist_3 → lower)",
              run_screw_cycles),
             ("Return screwdriver to holder (approach)",
-             lambda: ik_and_move_with_current_wrist3(
-                 moveit,
-                 SCREWDRIVER_X,
-                 SCREWDRIVER_Y,
-                 GRASP_Z + APPROACH_H,
-                 _initial_wrist3[0],
-                 _last_joints[0][5],
-                 0.3,
-                 [_last_joints[0], PICK_SEED, HOME_JOINTS],
-             )),
+             return_to_holder_approach),
             ("Lower to holder",
-             lambda: ik_and_move_with_current_wrist3(
-                 moveit,
-                 SCREWDRIVER_X,
-                 SCREWDRIVER_Y,
-                 GRASP_Z,
-                 _initial_wrist3[0],
-                 _last_joints[0][5],
-                 0.2,
-                 [_last_joints[0], PICK_SEED],
-             )),
+             lower_to_holder),
             ("Open gripper (drop screwdriver at holder)",
              lambda: gripper.open()),
             ("Detach screwdriver from tool0",
