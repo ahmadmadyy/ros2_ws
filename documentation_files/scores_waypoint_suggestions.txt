@@ -1,0 +1,118 @@
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: dfd5438f
+After waypoints: 46f06b9e
+
+Waypoint Generation
+Selected prompt: process_quality
+Waypoint file: outputs/cosmos/8b/waypoints_process_quality_dfd5438f_20260401_230836.json
+Eval score used for selection: 4.15
+
+Task summary
+Improved stability and precision in CW strokes, reduced joint drift, and enhanced torque consistency through adjusted step size and velocity scalings.
+
+Improvements addressed
+- Stabilized CW stroke duration by increasing velocity scaling slightly to ensure uniformity across cycles.
+- Calibrated joint drift within 0.1 rad by reducing step size and tightening tolerances during screwing cycles.
+- Enhanced torque delivery consistency by maintaining tighter step-size tolerances during CW rotations.
+
+Generated screwing parameters
+n_cycles: 5
+cw_step_rad: 0.785
+cw_velocity_scaling: 0.25
+lift_height_m: 0.06
+lift_velocity_scaling: 0.3
+ccw_velocity_scaling: 0.5
+lower_velocity_scaling: 0.15
+final_lift_velocity_scaling: 0.3
+return_home_velocity_scaling: 0.3
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 50915f55
+After waypoints: 6148990a
+
+Waypoint Generation
+Selected prompt: energy_dynamics
+Waypoint file: outputs/cosmos/8b/waypoints_energy_dynamics_50915f55_20260401_233519.json
+Eval score used for selection: 4.68
+
+Task summary
+Reduced joint drift during CW strokes and optimized CCW reversals to improve precision and alignment, resulting in fewer compensatory motions and smoother cycles.
+
+Improvements addressed
+- Reduced joint drift by decreasing the CW step size slightly and tightening velocity control during rotation, ensuring tighter synchronization between steps.
+- Optimized CCW reversals by adjusting the CCW velocity scaling to allow for more precise positioning, ensuring the tool returns exactly aligned with the next CW starting point.
+
+Generated screwing parameters
+n_cycles: 5
+cw_step_rad: 0.729
+cw_velocity_scaling: 0.18
+lift_height_m: 0.06
+lift_velocity_scaling: 0.3
+ccw_velocity_scaling: 0.45
+lower_velocity_scaling: 0.15
+final_lift_velocity_scaling: 0.3
+return_home_velocity_scaling: 0.3
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 9c3d6967
+After waypoints: f9840022
+
+Waypoint Generation
+Selected prompt: energy_dynamics
+Waypoint file: outputs/cosmos/8b/waypoints_energy_dynamics_9c3d6967_20260401_235310.json
+Eval score used for selection: 4.32
+
+Task summary
+Optimized CW stroke velocity for stable engagement, refined phase transitions to minimize wasted motion, and adjusted lift height for better efficiency without compromising safety or accuracy.
+
+Improvements addressed
+- Increased cw_velocity_scaling to 0.35 to ensure more stable engagement during screw driving, reducing cam-out risk by improving torque transmission.
+- Reduced lift_velocity_scaling to 0.25 to shorten the lift duration, allowing faster transition to CCW repositioning and enhancing overall throughput.
+- Lowered lift_height_m to 0.05 m to decrease unnecessary vertical travel, conserving energy and reducing idle time during repositioning.
+
+Generated screwing parameters
+n_cycles: 6
+cw_step_rad: 0.785
+cw_velocity_scaling: 0.35
+lift_height_m: 0.05
+lift_velocity_scaling: 0.25
+ccw_velocity_scaling: 0.5
+lower_velocity_scaling: 0.15
+final_lift_velocity_scaling: 0.3
+return_home_velocity_scaling: 0.3
+
+Latest run on 8b_test
+
+Trace IDs
+Before waypoints: 86aec5c3
+After waypoints: 6ff50472
+
+Waypoint Generation
+Selected prompt: energy_dynamics
+Waypoint file: outputs/cosmos/8b/waypoints_energy_dynamics_86aec5c3_20260403_145314.json
+Eval score used for selection: 4.06
+
+Task summary
+Improved velocity scaling during CW strokes for safety and efficiency, accelerated CCW repositioning to reduce idle time, and refined trajectory planning to minimize joint drift during repetitive motions. Maintained consistent engagement height and screwing mechanics while enhancing overall smoothness and productivity.
+
+Improvements addressed
+- Optimized CW velocity scaling to ensure speeds below 0.6 rad/s, improving safety and effectiveness during screwing.
+- Increased CCW velocity scaling to accelerate repositioning phases, reducing non-productive time.
+- Refined trajectory planning to minimize joint drift during repetitive cycles, maintaining stability and accuracy.
+
+Generated screwing parameters
+n_cycles: 5
+cw_step_rad: 0.785
+cw_velocity_scaling: 0.3
+lift_height_m: 0.06
+lift_velocity_scaling: 0.4
+ccw_velocity_scaling: 0.7
+lower_velocity_scaling: 0.15
+final_lift_velocity_scaling: 0.3
+return_home_velocity_scaling: 0.3
